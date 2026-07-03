@@ -1,0 +1,23 @@
+import apiClient from './client';
+
+export interface ConvertRequest {
+  text: string;
+  style: string;
+}
+
+export interface ConvertResponse {
+  success: boolean;
+  result: string;
+  usage?: { prompt_tokens: number; completion_tokens: number };
+}
+
+export const convertText = async (params: ConvertRequest): Promise<string> => {
+  const { data } = await apiClient.post<ConvertResponse>('/api/convert', params);
+  if (!data.success) throw new Error(data.error || '转换失败');
+  return data.result;
+};
+
+export const getQuota = async (): Promise<number> => {
+  const { data } = await apiClient.get<{ remaining: number }>('/api/quota');
+  return data.remaining;
+};
