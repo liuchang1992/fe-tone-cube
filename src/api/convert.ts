@@ -9,6 +9,7 @@ export interface ConvertResponse {
   success: boolean;
   result: string;
   usage?: { prompt_tokens: number; completion_tokens: number };
+  error?: string; 
 }
 
 export const convertText = async (params: ConvertRequest): Promise<string> => {

@@ -53,8 +53,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   fetchQuota: async () => {
     try {
       // 从后端获取今日剩余次数
-      const quota = await getQuotaFromAPI();
-      set({ remainingQuota: quota });
+      // const quota = await getQuotaFromAPI();
+      // set({ remainingQuota: quota });
     } catch {
       // 默认显示5次，但提示可能不准
       set({ remainingQuota: 5 });

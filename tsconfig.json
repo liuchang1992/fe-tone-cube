@@ -1,7 +1,12 @@
-{
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+{ 
+  "compilerOptions": {
+    // ... 其他配置 ...
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "jsx": "react-jsx",
+    "noEmit": true,
+  },
+  "include": ["src"],
+  
 }
