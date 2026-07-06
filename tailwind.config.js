@@ -1,11 +1,39 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
     "./index.html",
-    "./src/**/*.{html,js,vue,ts,jsx,tsx}"
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        primary: {
+          50: '#f5f3ff',
+          100: '#ede9fe',
+          200: '#c4b5fd',
+          300: '#a78bfa',
+          400: '#8b5cf6',
+          500: '#7c3aed',
+          600: '#6d28d9',
+          700: '#5b21b6',
+          800: '#4c1d95',
+          900: '#3b0764',
+        },
+      },
+      fontFamily: {
+        sans: [
+          '-apple-system', 
+          'BlinkMacSystemFont', 
+          '"Segoe UI"', 
+          'Roboto', 
+          '"Helvetica Neue"', 
+          'Arial', 
+          '"PingFang SC"', 
+          '"Microsoft YaHei"', 
+          'sans-serif'
+        ],
+      },
+    },
   },
   plugins: [],
 }

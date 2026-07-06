@@ -7,26 +7,36 @@ export const InputArea: React.FC = () => {
   const [localText, setLocalText] = useState(inputText);
   const debouncedText = useDebounce(localText, 300);
 
-  // 将防抖后的文本同步到 store
   useEffect(() => {
     setInput(debouncedText);
   }, [debouncedText, setInput]);
 
   const charCount = localText.length;
   const maxLength = 2000;
+  const isOverLimit = charCount > maxLength;
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-4">
+    <div className="flex-1 space-y-2">
       <textarea
-        className="w-full h-64 p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none text-gray-700"
-        placeholder="在此粘贴你想要转换的文本……（支持2000字）"
+        className={`
+          input-area w-full h-64 p-4 bg-white/60 rounded-2xl
+          text-gray-700 text-sm leading-relaxed resize-none
+          placeholder:text-gray-400/60
+          ${isOverLimit ? 'border-red-300' : ''}
+          ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}
+        `}
+        placeholder="在此粘贴你想要转换的文本……"
         value={localText}
         onChange={(e) => setLocalText(e.target.value)}
         disabled={isLoading}
       />
-      <div className="flex justify-between mt-2 text-sm text-gray-400">
-        <span>{charCount} 字</span>
-        <span>{charCount > maxLength ? '⚠️ 超过限制' : `剩余 ${maxLength - charCount} 字`}</span>
+      <div className="flex justify-between text-xs px-1">
+        <span className={isOverLimit ? 'text-red-500 font-medium' : 'text-gray-400'}>
+          {isOverLimit ? '⚠️ 超出限制' : '输入字数'}
+        </span>
+        <span className={isOverLimit ? 'text-red-500 font-medium' : 'text-gray-400'}>
+          {charCount} / {maxLength}
+        </span>
       </div>
     </div>
   );
