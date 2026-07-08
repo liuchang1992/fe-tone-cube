@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  ArrowLeftOutlined,
+  FileDoneOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleFilled
+} from '@ant-design/icons';
+import { Modal, message } from 'antd';
 import { useAppStore } from '@/store/appStore';
 import apiClient from '@/api/client';
+import './Corpus.less';
+
+const confirm = Modal.confirm;
 
 interface CorpusItem {
   id: number;
@@ -43,7 +53,7 @@ export const Corpus: React.FC = () => {
   // 文本粘贴上传
   const handleTextUpload = async () => {
     if (!textContent.trim() || textContent.trim().length < 50) {
-      alert('请至少输入50个字符以上的文本');
+      message.info('请至少输入50个字符以上的文本');
       return;
     }
     setUploading(true);
@@ -53,11 +63,11 @@ export const Corpus: React.FC = () => {
         file_name: `粘贴文本 ${new Date().toLocaleDateString()}`,
       });
       setStyleSummary(res.data.style_summary);
-      alert('上传成功！AI已分析你的写作风格');
+      message.info('上传成功！AI已分析你的写作风格');
       setTextContent('');
       fetchCorpusList();
     } catch (e: any) {
-      alert('上传失败：' + (e.response?.data?.detail || e.message));
+      message.info('上传失败');
     } finally {
       setUploading(false);
     }
@@ -74,76 +84,79 @@ export const Corpus: React.FC = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setStyleSummary(res.data.style_summary);
-      alert('上传成功！AI已分析你的写作风格');
+      message.info('上传成功！AI已分析你的写作风格');
       setFile(null);
       fetchCorpusList();
     } catch (e: any) {
-      alert('上传失败：' + (e.response?.data?.detail || e.message));
+      message.info('上传失败');
     } finally {
       setUploading(false);
     }
   };
 
   const deleteCorpus = async (id: number) => {
-    if (!confirm('确定删除这条语料吗？')) return;
-    try {
-      await apiClient.delete(`/api/corpus/${id}`);
-      setCorpusList(corpusList.filter(item => item.id !== id));
-    } catch (e: any) {
-      alert('删除失败：' + e.message);
-    }
+    confirm({
+      title: '提示',
+      icon: <ExclamationCircleFilled />,
+      content: '确定删除这条语料吗？',
+      onOk: async() => {
+        try {
+          await apiClient.delete(`/api/corpus/${id}`);
+          setCorpusList(corpusList.filter(item => item.id !== id));
+        } catch (e: any) {
+          message.warning('删除失败')
+        }
+      },
+      onCancel() {},
+    });
+    
   };
 
   // 清空所有语料
   const clearAllCorpus = async () => {
-    if (!confirm('确定清空所有语料吗？此操作不可撤销')) return;
-    try {
-      await apiClient.delete('/api/corpus/clear');
-      setCorpusList([]);
-      alert('已清空所有语料');
-    } catch (e: any) {
-      alert('清空失败：' + e.message);
-    }
+    confirm({
+      title: '提示',
+      icon: <ExclamationCircleFilled />,
+      content: '确定清空所有语料吗？此操作不可撤销',
+      onOk: async() => {
+        try {
+          await apiClient.delete('/api/corpus/clear');
+          setCorpusList([]);
+          message.info('已清空所有语料');
+        } catch (e: any) {
+          message.info('清空失败');
+        }
+      },
+      onCancel() {},
+    });
+    
   };
 
   return (
-    <div className="min-h-screen bg-[#f0f2f5] py-6 px-4 md:py-10">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">📂 个人语料库</h1>
-          <button onClick={() => navigate('/')} className="text-sm text-purple-500 hover:underline">
-            ← 返回首页
-          </button>
+    <div className="library-container">
+      <div className="container-wrapper">
+        <div className="page-navigation" onClick={() => navigate('/')}>
+          <ArrowLeftOutlined className="back-icon" />
+          <h1 className="navigation-text">个人语料库</h1>
         </div>
 
         {/* 上传区域 */}
-        <div className="glass-card rounded-3xl p-6 mb-6">
-          <h3 className="font-bold text-gray-800 mb-2">📤 让AI学习你的写作风格</h3>
-          <p className="text-sm text-gray-400 mb-4">
-            上传或粘贴你写过的文章、周报、邮件等文本，AI将分析你的写作风格，后续转换会参考这些风格。
-          </p>
-
+        <div className="upload-context">
+          <h3 className="upload-title">让魔方学习你的写作风格</h3>
+          <p className="sub-tips">上传或粘贴你写过的文章、周报、邮件等文本，AI将分析你的写作风格，后续转换会参考这些风格。</p>
           {/* 模式切换 */}
-          <div className="flex gap-2 mb-4">
+          <div className="upload-mode">
             <button
               onClick={() => setInputMode('text')}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                inputMode === 'text'
-                  ? 'bg-purple-500 text-white shadow-md'
-                  : 'bg-white/50 text-gray-600 hover:bg-white/80'
-              }`}
+              className={`upload-btn ${inputMode === 'text' ? 'active': ''}`}
             >
-              ✏️ 粘贴文本
+              粘贴文本
             </button>
             <button
               onClick={() => setInputMode('file')}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                inputMode === 'file'
-                  ? 'bg-purple-500 text-white shadow-md'
-                  : 'bg-white/50 text-gray-600 hover:bg-white/80'
-              }`}
+              className={`upload-btn ${inputMode === 'file' ? 'active': ''}`}
             >
-              📎 上传文件
+              上传文件
             </button>
           </div>
 
@@ -158,15 +171,17 @@ export const Corpus: React.FC = () => {
               />
               <div className="flex justify-between text-xs text-gray-400 mt-1">
                 <span>{textContent.length} 字符</span>
-                <span>{textContent.length < 50 ? '⚠️ 至少需要50个字符' : '✅ 可以提交'}</span>
+                <span>{textContent.length < 50 ? '至少需要50个字符' : ''}</span>
               </div>
-              <button
-                onClick={handleTextUpload}
-                disabled={uploading || textContent.length < 50}
-                className="mt-3 btn-primary text-white px-6 py-2 rounded-xl text-sm disabled:opacity-50"
-              >
-                {uploading ? '分析中...' : '提交并分析'}
-              </button>
+              <div className="submit-container">
+                <button
+                  onClick={handleTextUpload}
+                  disabled={uploading || textContent.length < 50}
+                  className="submit-btn"
+                >
+                  {uploading ? '分析中...' : '提交并分析'}
+                </button>
+              </div>
             </div>
           )}
 
@@ -184,33 +199,35 @@ export const Corpus: React.FC = () => {
                   已选择：{file.name} ({(file.size / 1024).toFixed(1)} KB)
                 </div>
               )}
-              <button
-                onClick={handleFileUpload}
-                disabled={uploading || !file}
-                className="mt-3 btn-primary text-white px-6 py-2 rounded-xl text-sm disabled:opacity-50"
-              >
-                {uploading ? '分析中...' : '上传并分析'}
-              </button>
+              <div className="submit-container">
+                <button
+                  onClick={handleFileUpload}
+                  disabled={uploading || !file}
+                  className="submit-btn"
+                >
+                  {uploading ? '分析中...' : '上传并分析'}
+                </button>
+              </div>
             </div>
           )}
 
           {styleSummary && (
-            <div className="mt-4 p-3 bg-purple-50 rounded-xl text-sm text-gray-600">
-              <strong>📊 风格分析结果：</strong>
-              <div className="mt-1">{styleSummary}</div>
+            <div className="current-analysis bg-purple-50">
+              <strong>风格分析结果：</strong>
+              <div className="analysis-detail">{styleSummary}</div>
             </div>
           )}
         </div>
 
         {/* 已上传列表 */}
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold text-gray-800">📚 已上传的语料</h3>
+        <div className="analyzed-list-title">
+          <h3 className="title">已上传语料分析记录</h3>
           {corpusList.length > 0 && (
             <button
               onClick={clearAllCorpus}
-              className="text-xs text-red-500 hover:text-red-700 transition-colors"
+              className="delete-all"
             >
-              🗑️ 清空所有
+              清空所有
             </button>
           )}
         </div>
@@ -223,27 +240,23 @@ export const Corpus: React.FC = () => {
             还没有上传任何语料，上传后AI将学习你的写作风格
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="analyzed-list">
             {corpusList.map((item) => (
-              <div key={item.id} className="glass-card rounded-2xl p-4">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 text-xs text-gray-400 mb-1">
-                      <span>📄 {item.file_name}</span>
-                      <span>· {new Date(item.created_at).toLocaleDateString()}</span>
-                    </div>
-                    {item.style_summary && (
-                      <div className="text-sm text-gray-600 bg-purple-50 p-2 rounded-lg mt-1 line-clamp-3">
-                        {item.style_summary}
+              <div key={item.id} className="analyzed-item">
+                <div className="item-detail">
+                  <FileDoneOutlined className="file-icon" />
+                  <div className="detail-info">
+                      <p className="title">{item.file_name}</p>
+                      <p className="time">{new Date(item.created_at).toLocaleDateString()}</p>
+                      <div className="status-box">
+                         <CheckCircleOutlined className="status-icon"/>
+                         <p className="status">已完成</p>
                       </div>
-                    )}
                   </div>
-                  <button
-                    onClick={() => deleteCorpus(item.id)}
-                    className="text-gray-400 hover:text-red-500 transition-colors ml-4"
-                  >
-                    🗑️
-                  </button>
+                </div>
+                <div className="item-operate">
+                  <a href="javascript:;" className="view">查看报告</a>
+                  <a href="javascript:;" className="delete" onClick={() => deleteCorpus(item.id)}>删除</a>
                 </div>
               </div>
             ))}

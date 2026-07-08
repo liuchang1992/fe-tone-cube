@@ -182,3 +182,112 @@
     border-right-color: var(--border);
   }
 }
+
+.banner-tips {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #111827;
+  font-size: 32px;
+  font-weight: bold;
+  padding: 48px 0;
+}
+
+.content {
+  max-width: 800px;
+  margin: 0 auto;
+  .agent-context {
+    height: 405px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 40px;
+    .agent-input-area {
+      flex: 1;
+      align-self: stretch;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      border-radius: 12px;
+      padding: 24px; 
+      .agent-input-area-container {
+        height: 360px;
+        .container-title {
+          display: flex;
+          justify-content: space-between;
+          .title {
+            color: #374151;
+            font-size: 14px;
+            margin-bottom: 12px;
+          }
+        }
+      }
+    }
+    .transform-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 100%;
+      background: #7C3AED;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      .ts-icon {
+        background: url('./assets/transform.png') no-repeat;
+        width: 15px;
+        height: 14px;
+        background-size: contain;
+      }
+    }
+    .agent-output-area {
+      flex: 1;
+      align-self: stretch;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      border-radius: 12px;
+      padding: 24px; 
+      .agent-output-area-container {
+        height: 360px;
+        .container-title {
+          display: flex;
+          justify-content: space-between;
+          .title {
+            color: #374151;
+            font-size: 14px;
+            margin-bottom: 12px;
+          }
+        }
+      }
+    }
+  }
+  .quick-transform {
+    margin-top: 32px;
+    .transform-btn {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 48px;
+      .btn {
+        padding: 12px 88px;
+        color: #fff;
+        font-weight: bold;
+        font-size: 16px;
+        background: linear-gradient(90deg, #7C3AED 0%, #A78BFA 100%);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+    }
+  }
+  .ai-content-tips {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    color: #536471a3;
+    gap: 4px;
+    margin-bottom: 40px;
+  }
+}

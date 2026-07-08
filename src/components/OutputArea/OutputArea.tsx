@@ -3,6 +3,7 @@ import { useAppStore } from '@/store/appStore';
 import { useTypingEffect } from '@/hooks/useTypingEffect';
 import { FiCopy, FiCheck, FiShare2 } from 'react-icons/fi';
 import { SharePoster } from '@/components/Share/SharePoster';
+import './index.less';
 
 export const OutputArea: React.FC = () => {
   const { outputText, isLoading, inputText, selectedStyle } = useAppStore();
@@ -60,7 +61,7 @@ export const OutputArea: React.FC = () => {
 
   return (
     <>
-      <div className="relative h-full flex flex-col">
+      <div className="output-container">
         {/* 输出内容 */}
         <div
           ref={outputRef}
@@ -121,8 +122,7 @@ export const OutputArea: React.FC = () => {
                 onClick={handleShare}
                 className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50/80 rounded-lg hover:bg-indigo-100 transition-colors border border-indigo-200/50"
               >
-                <FiShare2 />
-                分享
+                <FiShare2 title="分享" />
               </button>
               {/* 复制按钮 */}
               <button
@@ -136,8 +136,7 @@ export const OutputArea: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <FiCopy />
-                    复制结果
+                    <FiCopy title="复制结果" />
                   </>
                 )}
               </button>
@@ -147,13 +146,13 @@ export const OutputArea: React.FC = () => {
       </div>
 
       {/* 分享海报弹窗 */}
-      <SharePoster
+      {/* <SharePoster
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
         originalText={inputText || '原文'}
         convertedText={outputText}
         styleName={selectedStyle}
-      />
+      /> */}
     </>
   );
 };

@@ -1,0 +1,161 @@
+
+.library-container {
+    margin-top: 48px;
+    .container-wrapper {
+        max-width: 800px;
+        margin: 0 auto;
+        .page-navigation {
+            display: flex;
+            justify-self: start;
+            align-items: center;
+            margin-bottom: 36px;
+            cursor: pointer;
+            .back-icon {
+                // font-weight: bold;
+                // margin-left: 6px;
+                margin-right: 20px;
+            }
+            .navigation-text {
+                font-size: 24px;
+                font-weight: bold;
+            }
+        }
+        .upload-context {
+            background: #fff;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 32px;
+            .upload-title {
+                font-size: 20px;
+                font-weight: bold;
+                color: #111827;
+                margin-bottom: 12px;
+            }
+            .sub-tips {
+                font-size: 14px;
+                color: #6B7280;
+                margin-bottom: 32px;
+            }
+            .upload-mode {
+                display: flex;
+                justify-content: start;
+                gap: 8px;
+                margin-bottom: 20px;
+                .upload-btn {
+                    color: #374151;
+                    padding: 5px 13px;
+                    border-radius: 12px;
+                    font-size: 14px;
+                }
+                .upload-btn.active {
+                    background: #7C3AED;
+                    color: #fff;
+                }
+            }
+            .submit-container {
+                margin-top: 40px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 32px;
+                .submit-btn {
+                    color: #fff;
+                    font-size: 16px;
+                    font-weight: bold;
+                    border-radius: 24px;
+                    background: linear-gradient(90deg, #7C3AED 0%, #A78BFA 100%);
+                    padding: 12px 80px;
+                }
+            }
+            .current-analysis {
+                font-size: 14px;
+                padding: 10px 12px;
+                border-radius: 8px;
+                .analysis-detail {
+                    margin-top: 4px;
+                }
+            }
+            
+        }
+        .analyzed-list-title {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            .title {
+                font-size: 18px;
+                font-weight: bold;
+                color: #111827;
+            }
+            .delete-all {
+                font-size: 12px;
+                color: #6B7280;
+            }
+        }
+        .analyzed-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            .analyzed-item {
+                background: #fff;
+                color: #111827;
+                padding: 16px 24px;
+                border-radius: 12px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                .item-detail {
+                    display: flex;
+                    .file-icon {
+                        font-size: 32px;
+                        color: #7C3AED;
+                        margin-right: 24px;
+                    }
+                    .detail-info {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 2px;
+                        .title {
+                            font-size: 16px;
+                        }
+                        .time {
+                            font-size: 14px;
+                            color: #6B7280;
+                        }
+                        .status-box {
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            width: 76px;
+                            height: 24px;
+                            color: #065F46;
+                            background: #D1FAE5;
+                            font-size: 14px;
+                            border-radius: 20px;
+                            .status-icon {
+                                width: 12px;
+                                height: 12px;
+                                display: flex;
+                                color: #065F46;
+                                margin-right: 4px;
+                            }
+                            .status {
+                                
+                            }
+                        }
+                    }
+                }
+                .item-operate {
+                    display: flex;
+                    gap: 16px;
+                    font-size: 14px;
+                    .view {
+                        color: #7C3AED;
+                    }
+                    .delete {
+                        color: #EF4444;
+                    }
+                }
+            }
+        }
+    }
+}
