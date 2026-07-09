@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { register } from '@/api/auth';
+import { Checkbox, message } from 'antd';
+import './RegisterModal.less';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -11,39 +13,44 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, o
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  // const [error, setError] = useState('');
+  // const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    // setError('');
+    // setSuccess('');
+    if (!agreed) {
+      message.info('请您勾选用户隐私协议')
+      return;
+    }
     if (password !== confirmPassword) {
-      setError('两次输入的密码不一致');
+      message.info('两次输入的密码不一致');
       return;
     }
     if (password.length < 6) {
-      setError('密码长度至少 6 位');
+      message.info('密码长度至少 6 位');
       return;
     }
 
     setIsLoading(true);
     try {
       await register({ username, password });
-      setSuccess('注册成功！请登录');
+      message.success('注册成功！请登录');
       setTimeout(() => {
         onClose();
         onSwitchToLogin();
         setUsername('');
         setPassword('');
         setConfirmPassword('');
-        setSuccess('');
+        // setSuccess('');
       }, 1500);
     } catch (err: any) {
-      setError(err.message || '注册失败，请稍后重试');
+      message.info(err.message || '注册失败，请稍后重试');
     } finally {
       setIsLoading(false);
     }
@@ -51,17 +58,16 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, o
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="glass-card rounded-3xl p-8 max-w-md w-full relative" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">×</button>
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">注册</h2>
-          <p className="text-sm text-gray-400 mt-1">创建你的账号</p>
+      <div className="register-modal" onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className="close-btn">×</button>
+        <div className="login-title">
+          <h2 className="title">注册</h2>
         </div>
 
-        {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{error}</div>}
-        {success && <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-600 text-sm">{success}</div>}
+        {/* {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{error}</div>}
+        {success && <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-600 text-sm">{success}</div>} */}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="login-form">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">用户名</label>
             <input
@@ -95,6 +101,9 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, o
               required
             />
           </div>
+          <Checkbox checked={agreed} onChange={(e) => setAgreed(e.target.checked)}>
+            我已阅读并同意 <a href="/privacy" target="_blank">《隐私政策》</a>
+          </Checkbox>
           <button
             type="submit"
             disabled={isLoading}

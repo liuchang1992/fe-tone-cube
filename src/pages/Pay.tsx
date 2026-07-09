@@ -45,7 +45,7 @@ const PLANS: PlanOption[] = [
 
 export const Pay: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAppStore();
+  const { user, setShowLoginModal } = useAppStore();
   const [selectedPlan, setSelectedPlan] = useState<string>('quarterly');
   const [orderNo, setOrderNo] = useState<string>('');
   const [qrCode, setQrCode] = useState<string>('');
@@ -56,7 +56,8 @@ export const Pay: React.FC = () => {
   // 检查登录状态
   useEffect(() => {
     if (!user.isLoggedIn) {
-      navigate('/login');
+      // navigate('/login');
+      setShowLoginModal(true);
     }
   }, [user, navigate]);
 

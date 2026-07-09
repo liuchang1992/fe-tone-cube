@@ -1,8 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { message } from 'antd'
 import { useAppStore } from '@/store/appStore';
 import { useTypingEffect } from '@/hooks/useTypingEffect';
-import { FiCopy, FiCheck, FiShare2 } from 'react-icons/fi';
-import { SharePoster } from '@/components/Share/SharePoster';
+// import { FiCopy, FiCheck, FiShare2 } from 'react-icons/fi';
+import {
+  CopyOutlined,
+} from '@ant-design/icons';
+// import { SharePoster } from '@/components/Share/SharePoster';
 import './index.less';
 
 export const OutputArea: React.FC = () => {
@@ -44,6 +48,7 @@ export const OutputArea: React.FC = () => {
     const textToCopy = isComplete ? outputText : displayText;
     if (!textToCopy) return;
     await navigator.clipboard.writeText(textToCopy);
+    message.success('复制成功');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -52,10 +57,10 @@ export const OutputArea: React.FC = () => {
     skip();
   };
 
-  const handleShare = () => {
-    if (!outputText) return;
-    setShowShareModal(true);
-  };
+  // const handleShare = () => {
+  //   if (!outputText) return;
+  //   setShowShareModal(true);
+  // };
 
   const outputLength = (isComplete ? outputText : displayText)?.length || 0;
 
@@ -109,37 +114,15 @@ export const OutputArea: React.FC = () => {
 
         {/* 底部操作栏 */}
         {(displayText || isLoading) && !isLoading && (
-          <div className="flex justify-between items-center mt-3">
+          <div className="output-info">
             <span className="text-xs text-gray-400">
               共 {outputLength} 字
-              {!isComplete && isTyping && (
+              {/* {!isComplete && isTyping && (
                 <span className="ml-2 text-purple-400 animate-pulse">● 生成中...</span>
-              )}
+              )} */}
             </span>
-            <div className="flex items-center gap-2">
-              {/* 分享按钮 */}
-              <button
-                onClick={handleShare}
-                className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50/80 rounded-lg hover:bg-indigo-100 transition-colors border border-indigo-200/50"
-              >
-                <FiShare2 title="分享" />
-              </button>
-              {/* 复制按钮 */}
-              <button
-                onClick={handleCopy}
-                className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-purple-600 bg-purple-50/80 rounded-lg hover:bg-purple-100 transition-colors border border-purple-200/50"
-              >
-                {copied ? (
-                  <>
-                    <FiCheck className="text-green-500" />
-                    <span className="text-green-600">已复制</span>
-                  </>
-                ) : (
-                  <>
-                    <FiCopy title="复制结果" />
-                  </>
-                )}
-              </button>
+            <div>
+              <CopyOutlined onClick={handleCopy} className="copy-icon"/>
             </div>
           </div>
         )}

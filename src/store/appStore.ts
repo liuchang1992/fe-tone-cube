@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { message } from 'antd';
 import { convertText, getQuota } from '@/api/convert';
 import { getStoredUsername } from '@/api/auth';
 import { getVisitorId } from '@/utils/visitorId';
@@ -62,10 +63,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
-    set({ 
+    set({
       user: { username: '', isLoggedIn: false, isVip: false },
-      remainingQuota: 0 // 可选重置，但 fetchQuota 会刷新
+      remainingQuota: 0,
+      // ===== 新增：清空输入和输出 =====
+      inputText: '',
+      outputText: '',
+      error: null,
+      isLoading: false,
     });
+    // 可选：清空后重新获取访客配额
+    setTimeout(() => get().fetchQuota(), 100);
   },
 
   convert: async () => {
@@ -90,7 +98,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       // 检查是否是次数用尽的错误
       if (errorMsg.includes('次数已用完') || errorMsg.includes('免费次数')) {
         set({ error: errorMsg, isLoading: false });
-        set({ showQuotaAlert: true });
+        const user = get().user; 
+        user.isLoggedIn ? message.info('您的转换次数已用完') : set({ showQuotaAlert: true });
       } else {
         set({ error: errorMsg, isLoading: false });
       }

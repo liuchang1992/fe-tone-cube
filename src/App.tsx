@@ -15,6 +15,7 @@ import { useAppStore } from '@/store/appStore';
 import { History } from '@/pages/History';
 import { Corpus } from '@/pages/Corpus';
 import { Layout } from '@/components/Layout/Layout';
+import { Privacy } from '@/pages/Privacy';
 import './App.css';
 
 // ========== 主页组件（包含弹窗） ==========
@@ -111,11 +112,13 @@ function HomePage() {
             <span>·</span>
             <span>数据仅用于本次转换</span>
           </div>
+          <div className="footer-links">
+            <a href="/privacy" target="_blank" className="footer-link">隐私政策</a>
+            <span className="divider">·</span>
+            <span>© 2026 语气魔方</span>
+          </div>
         </div>
-        
       </div>
-
-      
     </div>
   );
 }
@@ -160,6 +163,7 @@ function App() {
           <Route path="/pay" element={<Pay />} />
           <Route path="/history" element={<History />} />
           <Route path="/corpus" element={<Corpus />} />
+          <Route path="/privacy" element={<Privacy />} />
         </Route>
       </Routes>
 

@@ -1,0 +1,263 @@
+// src/pages/Privacy.less
+
+.privacy-page {
+  min-height: 100vh;
+  background: #f8f7fc;
+  padding: 24px 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.privacy-container {
+  max-width: 820px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 28px;
+  padding: 40px 36px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  margin-top: 20px;
+
+  // 头部
+  .privacy-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+    }
+
+    .logo-text {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1f2937;
+      letter-spacing: -0.3px;
+
+      .highlight {
+        background: linear-gradient(135deg, #7c3aed, #4f46e5);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+    }
+  }
+
+  // 标题区
+  .privacy-title-section {
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+
+    .title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 6px !important;
+    }
+
+    .meta {
+      font-size: 14px;
+      color: #9ca3af;
+
+      span {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+    }
+  }
+
+  // 正文
+  .privacy-content {
+    color: #374151;
+    font-size: 15px;
+    line-height: 1.8;
+
+    .intro {
+      font-size: 16px;
+      font-weight: 500;
+      color: #1f2937;
+      margin-bottom: 16px;
+    }
+
+    .notice-box {
+      background: rgba(124, 58, 237, 0.06);
+      border-left: 3px solid #7c3aed;
+      padding: 14px 18px;
+      border-radius: 0 10px 10px 0;
+      margin: 14px 0 20px 0;
+      font-size: 14px;
+      color: #4b5563;
+
+      strong {
+        color: #1f2937;
+      }
+    }
+
+    h2.ant-typography {
+      font-size: 19px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-top: 32px !important;
+      margin-bottom: 10px !important;
+      padding-left: 14px;
+      border-left: 3px solid #7c3aed;
+
+      &:first-of-type {
+        margin-top: 0 !important;
+      }
+    }
+
+    h3.ant-typography {
+      font-size: 16px;
+      font-weight: 600;
+      color: #374151;
+      margin-top: 18px !important;
+      margin-bottom: 6px !important;
+    }
+
+    p.ant-typography {
+      margin-bottom: 12px;
+      color: #4b5563;
+    }
+
+    ul,
+    ol {
+      margin: 8px 0 16px 20px;
+      color: #4b5563;
+
+      li {
+        margin-bottom: 6px;
+      }
+    }
+
+    .footer-note {
+      background: rgba(124, 58, 237, 0.04);
+      border-left: 3px solid #a78bfa;
+      padding: 14px 18px;
+      border-radius: 0 10px 10px 0;
+      margin-top: 24px;
+      text-align: center;
+    }
+  }
+
+  // 底部操作栏
+  .privacy-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(229, 231, 235, 0.5);
+    gap: 12px;
+
+    .btn-primary {
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      border: none;
+      box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3);
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
+        background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+
+  // 版权
+  .privacy-copyright {
+    margin-top: 24px;
+    font-size: 12px;
+    color: #d1d5db;
+    text-align: center;
+    border-top: 1px solid rgba(229, 231, 235, 0.3);
+    padding-top: 20px;
+
+    a {
+      color: #9ca3af;
+      text-decoration: none;
+
+      &:hover {
+        color: #7c3aed;
+      }
+    }
+  }
+}
+
+// ====== 响应式 ======
+@media (max-width: 640px) {
+  .privacy-container {
+    padding: 24px 18px;
+    border-radius: 20px;
+
+    .logo-text {
+      font-size: 20px;
+    }
+
+    .privacy-title-section {
+      .title {
+        font-size: 22px !important;
+      }
+    }
+
+    .privacy-content {
+      font-size: 14px;
+
+      h2.ant-typography {
+        font-size: 17px !important;
+      }
+    }
+
+    .privacy-footer {
+      flex-direction: column;
+      align-items: stretch;
+
+      .btn-primary {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+        padding: 14px;
+        height: auto;
+      }
+    }
+  }
+}
+
+@media (max-width: 400px) {
+  .privacy-container {
+    padding: 18px 14px;
+
+    .privacy-title-section .meta {
+      font-size: 12px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+  }
+}

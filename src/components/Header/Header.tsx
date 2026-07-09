@@ -37,13 +37,13 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
     // 否则停留在当前页面（首页会自动切换为未登录状态）
   };
 
-  const handleUpgrade = () => {
-    if (user.isLoggedIn) {
-      navigate('/pay');
-    } else {
-      onLoginClick();
-    }
-  };
+  // const handleUpgrade = () => {
+  //   if (user.isLoggedIn) {
+  //     navigate('/pay');
+  //   } else {
+  //     onLoginClick();
+  //   }
+  // };
 
   // 判断当前路径是否匹配
   const isActive = (path: string) => location.pathname === path;
@@ -52,7 +52,9 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
     <>
       <header className="header">
         <div className="logo-context cursor-pointer" onClick={() => navigate('/')}>
-          <div className="logo"></div>
+          <div className="logo">
+            <span className="inner-logo"></span>
+          </div>
           <h1 className="title">语气魔方</h1>
         </div>
         {user.isLoggedIn && (<div className="opreate-context">
@@ -65,10 +67,10 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
               <ClusterOutlined className="library-icon"/>
               <span className="item-text">个人语料库</span>
             </div>
-            <div className={`opreate-item ${isActive('/pay') ? 'active' : ''}`} onClick={handleUpgrade}>
+            {/* <div className={`opreate-item ${isActive('/pay') ? 'active' : ''}`} onClick={handleUpgrade}>
               <RocketOutlined className="rocket-icon"/>
               <span className="item-text">升级会员</span>
-            </div>
+            </div> */}
         </div>)}
         <div className="login-context">
           <div className="count-section">

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { login } from '@/api/auth';
 import { useAppStore } from '@/store/appStore';
+import './LoginModal.less';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -38,18 +39,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitc
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="glass-card rounded-3xl p-8 max-w-md w-full relative" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">×</button>
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">登录</h2>
-          <p className="text-sm text-gray-400 mt-1">登录后可使用更多次数</p>
+      <div className="login-modal" onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className="close-btn">×</button>
+        <div className="login-title">
+          <h2 className="title">登录</h2>
         </div>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{error}</div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="login-form">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">用户名</label>
             <input
@@ -71,6 +71,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitc
               placeholder="请输入密码"
               required
             />
+          </div>
+          <div style={{ marginTop: 12, fontSize: 13, color: '#999', textAlign: 'center' }}>
+            登录即代表您已阅读并同意 <a href="/privacy" target="_blank">《隐私政策》</a>
           </div>
           <button
             type="submit"

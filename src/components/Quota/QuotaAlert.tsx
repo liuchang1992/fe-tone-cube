@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAppStore } from '@/store/appStore';
+import './index.less';
 
 interface QuotaAlertProps {
   isOpen: boolean;
@@ -12,15 +13,15 @@ export const QuotaAlert: React.FC<QuotaAlertProps> = ({ isOpen, onClose, onLogin
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="glass-card rounded-3xl p-8 max-w-md w-full relative text-center" onClick={(e) => e.stopPropagation()}>
+      <div className="quoat-alert" onClick={(e) => e.stopPropagation()}>
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">×</button>
         
         <div className="text-6xl mb-4">😅</div>
         <h3 className="text-xl font-bold text-gray-800 mb-2">今日免费次数已用完</h3>
         <p className="text-gray-500 text-sm mb-6">
-          登录后可以继续使用，或升级会员获得更多次数
+          登录后可以获取每日赠送次数
         </p>
-        <div className="flex flex-col gap-3">
+        <div className="go-login flex flex-col gap-3">
           <button
             onClick={onLogin}
             className="btn-primary text-white font-semibold py-3 rounded-xl text-base w-full"

@@ -7,7 +7,7 @@ export const InputArea: React.FC = () => {
   const { inputText, setInput, isLoading } = useAppStore();
   const [localText, setLocalText] = useState(inputText);
   const debouncedText = useDebounce(localText, 300);
-
+  
   useEffect(() => {
     setInput(debouncedText);
   }, [debouncedText, setInput]);
