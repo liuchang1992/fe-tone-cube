@@ -1,12 +1,15 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAppStore } from '@/store/appStore';
-import { logout } from '@/api/auth';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { message } from 'antd';
 import {
+  BookOutlined,
   ClockCircleOutlined,
-  ClusterOutlined,
-  RocketOutlined
+  RocketOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
+
+import { logout } from '@/api/auth';
+import { useAppStore } from '@/store/appStore';
 import './index.less';
 
 interface HeaderProps {
@@ -17,73 +20,77 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { remainingQuota, user, logout: storeLogout, fetchQuota } = useAppStore();
-
-  const isVip = user.isVip || false;
+  const { fetchQuota, logout: storeLogout, remainingQuota, user } = useAppStore();
 
   const handleLogout = () => {
-    // 1. 清除本地 token 和用户名
     logout();
-    // 2. 清除 store 中的用户状态
     storeLogout();
-    // 3. 重新获取访客配额（变为访客模式）
     fetchQuota();
 
-    // 4. 如果当前在需要登录的页面，跳转到首页
-    const protectedPaths = ['/history', '/pay'];
-    if (protectedPaths.includes(location.pathname)) {
+    if (['/history', '/pay', '/corpus'].includes(location.pathname)) {
       navigate('/');
     }
-    // 否则停留在当前页面（首页会自动切换为未登录状态）
+
+    message.success('退出成功');
   };
 
-  // const handleUpgrade = () => {
-  //   if (user.isLoggedIn) {
-  //     navigate('/pay');
-  //   } else {
-  //     onLoginClick();
-  //   }
-  // };
+  const goProtected = (path: string) => {
+    if (user.isLoggedIn) {
+      navigate(path);
+      return;
+    }
+    onLoginClick();
+  };
 
-  // 判断当前路径是否匹配
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <>
-      <header className="header">
-        <div className="logo-context cursor-pointer" onClick={() => navigate('/')}>
-          <div className="logo">
-            <span className="inner-logo"></span>
-          </div>
-          <h1 className="title">语气魔方</h1>
+    <header className="header">
+      <button className="logo-context" onClick={() => navigate('/')} aria-label="返回首页">
+        <span className="logo">
+          <span className="inner-logo" />
+        </span>
+        <span className="title">语气魔方</span>
+      </button>
+      {
+        user.isLoggedIn ? (<nav className="operate-context" aria-label="主导航">
+        <button
+          className={`operate-item ${isActive('/history') ? 'active' : ''}`}
+          onClick={() => goProtected('/history')}
+        >
+          <ClockCircleOutlined />
+          <span>历史记录</span>
+        </button>
+        <button
+          className={`operate-item ${isActive('/corpus') ? 'active' : ''}`}
+          onClick={() => goProtected('/corpus')}
+        >
+          <BookOutlined />
+          <span>语料库</span>
+        </button>
+        {/* <button
+          className={`operate-item ${isActive('/pay') ? 'active' : ''}`}
+          onClick={() => goProtected('/pay')}
+        >
+          <RocketOutlined />
+          <span>升级会员</span>
+        </button> */}
+      </nav>) : null 
+      }
+      <div className="login-context">
+        <div className="count-section">
+          <span>剩余次数：</span>
+          <strong>{remainingQuota < 0 ? '∞' : remainingQuota}</strong>
         </div>
-        {user.isLoggedIn && (<div className="opreate-context">
-            <div className={`opreate-item ${isActive('/history') ? 'active' : ''}`} onClick={() => navigate('/history')}>
-              {/* <img src={historySvg} className="history-icon"/> */}
-              <ClockCircleOutlined className="history-icon"/>
-              <span className="item-text">历史记录</span>
-            </div>
-            <div className={`opreate-item ${isActive('/corpus') ? 'active' : ''}`} onClick={() => navigate('/corpus')}>
-              <ClusterOutlined className="library-icon"/>
-              <span className="item-text">个人语料库</span>
-            </div>
-            {/* <div className={`opreate-item ${isActive('/pay') ? 'active' : ''}`} onClick={handleUpgrade}>
-              <RocketOutlined className="rocket-icon"/>
-              <span className="item-text">升级会员</span>
-            </div> */}
-        </div>)}
-        <div className="login-context">
-          <div className="count-section">
-            <span className="">剩余次数：</span>
-            <span className="">{remainingQuota}</span>
-          </div>
-          {
-            !user.isLoggedIn ? 
-              (<button onClick={onLoginClick} className="login-btn">登录</button>) : 
-              (<button onClick={handleLogout} className="login-btn">退出</button>)
-          }
-        </div>
-      </header>
-    </>
+        {/* <span className="user-avatar" aria-hidden="true">
+          <UserOutlined />
+        </span> */}
+        {user.isLoggedIn ? (
+          <button onClick={handleLogout} className="login-btn">退出</button>
+        ) : (
+          <button onClick={onLoginClick} className="login-btn">登录</button>
+        )}
+      </div>
+    </header>
   );
 };

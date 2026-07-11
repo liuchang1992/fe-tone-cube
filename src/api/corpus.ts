@@ -24,10 +24,19 @@ export const uploadCorpusFile = async (file: File, scene: string = 'all') => {
   });
 };
 
+export interface CorpusListResponse {
+  total: number;
+  page: number;
+  page_size: number;
+  items: CorpusItem[];
+}
+
 // 获取语料列表（支持场景筛选）
-export const getCorpusList = async (scene?: string) => {
-  const params = scene ? { scene } : {};
-  return apiClient.get<CorpusItem[]>('/api/corpus/list', { params });
+export const getCorpusList = async (page: number = 1, pageSize: number = 10, scene?: string) => {
+  const params: any = { page, page_size: pageSize };
+  if (scene) params.scene = scene;
+  const res = await apiClient.get<CorpusListResponse>('/api/corpus/list', { params });
+  return res.data;
 };
 
 // 删除单条语料

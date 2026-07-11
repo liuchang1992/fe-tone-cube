@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { login } from '@/api/auth';
 import { useAppStore } from '@/store/appStore';
+import './AuthPage.less';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -27,40 +28,40 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-4">
-      <div className="glass-card rounded-3xl p-8 max-w-md w-full">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-extrabold text-gray-800">
+    <div className="auth-page">
+      <div className="auth-card glass-card">
+        <div className="auth-header">
+          <h1 className="auth-title">
             语气<span className="gradient-text">魔方</span>
           </h1>
-          <p className="text-sm text-gray-400 mt-1">登录以继续使用</p>
+          <p className="auth-subtitle">登录以继续使用</p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+          <div className="alert-message alert-message--error">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="field-stack">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+            <label className="form-label">用户名</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-3 bg-white/60 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all"
+              className="form-input"
               placeholder="请输入用户名"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">密码</label>
+            <label className="form-label">密码</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-white/60 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all"
+              className="form-input"
               placeholder="请输入密码"
               required
             />
@@ -68,14 +69,14 @@ export const Login: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="btn-primary w-full text-white font-semibold py-3 rounded-xl text-base"
+            className="btn-primary form-submit"
           >
             {isLoading ? '登录中...' : '登录'}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-400 mt-4">
-          还没有账号？ <Link to="/register" className="text-purple-500 hover:underline">立即注册</Link>
+        <p className="form-footer">
+          还没有账号？ <Link to="/register" className="text-link">立即注册</Link>
         </p>
       </div>
     </div>

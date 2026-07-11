@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { register } from '@/api/auth';
 import { Checkbox, message } from 'antd';
+import { CloseOutlined, LockOutlined, UserAddOutlined, UserOutlined } from '@ant-design/icons';
+
+import { register } from '@/api/auth';
 import './RegisterModal.less';
 
 interface RegisterModalProps {
@@ -9,115 +11,139 @@ interface RegisterModalProps {
   onSwitchToLogin: () => void;
 }
 
-export const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onSwitchToLogin }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  // const [error, setError] = useState('');
-  // const [success, setSuccess] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+export const RegisterModal: React.FC<RegisterModalProps> = ({
+  isOpen,
+  onClose,
+  onSwitchToLogin,
+}) => {
   const [agreed, setAgreed] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // setError('');
-    // setSuccess('');
+  const resetForm = () => {
+    setAgreed(false);
+    setConfirmPassword('');
+    setPassword('');
+    setUsername('');
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
     if (!agreed) {
-      message.info('请您勾选用户隐私协议')
+      message.info('请先阅读并同意隐私政策');
       return;
     }
     if (password !== confirmPassword) {
       message.info('两次输入的密码不一致');
       return;
     }
-    if (password.length < 6) {
-      message.info('密码长度至少 6 位');
+    if (password.length < 8) {
+      message.info('密码长度至少 8 位');
       return;
     }
 
     setIsLoading(true);
     try {
       await register({ username, password });
-      message.success('注册成功！请登录');
-      setTimeout(() => {
-        onClose();
-        onSwitchToLogin();
-        setUsername('');
-        setPassword('');
-        setConfirmPassword('');
-        // setSuccess('');
-      }, 1500);
+      message.success('注册成功，请登录');
+      resetForm();
+      onClose();
+      onSwitchToLogin();
     } catch (err: any) {
-      message.info(err.message || '注册失败，请稍后重试');
+      message.info(err.message || '注册失败，请稍后再试');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="register-modal" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="close-btn">×</button>
-        <div className="login-title">
-          <h2 className="title">注册</h2>
+    <div className="modal-mask" onClick={handleClose}>
+      <div className="auth-modal" onClick={(event) => event.stopPropagation()}>
+        <button onClick={handleClose} className="auth-close" aria-label="关闭">
+          <CloseOutlined />
+        </button>
+
+        <div className="auth-brand">
+          {/* <span className="auth-logo">
+            <span />
+          </span> */}
+          <div>
+            <h2>创建账号</h2>
+            <p>保存你的转换记录，训练更贴近你的写作风格</p>
+          </div>
         </div>
 
-        {/* {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{error}</div>}
-        {success && <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-600 text-sm">{success}</div>} */}
+        <form onSubmit={handleSubmit} className="auth-form">
+          <label className="auth-field">
+            <span>用户名</span>
+            <div className="auth-input-wrap">
+              <UserOutlined />
+              <input
+                type="text"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                placeholder="3-32 位用户名"
+                autoComplete="username"
+                required
+              />
+            </div>
+          </label>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">用户名</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-3 bg-white/60 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all"
-              placeholder="请设置用户名"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">密码</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-white/60 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all"
-              placeholder="至少 6 位"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">确认密码</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-white/60 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all"
-              placeholder="再次输入密码"
-              required
-            />
-          </div>
-          <Checkbox checked={agreed} onChange={(e) => setAgreed(e.target.checked)}>
-            我已阅读并同意 <a href="/privacy" target="_blank">《隐私政策》</a>
+          <label className="auth-field">
+            <span>密码</span>
+            <div className="auth-input-wrap">
+              <LockOutlined />
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="至少 8 位"
+                autoComplete="new-password"
+                required
+              />
+            </div>
+          </label>
+
+          <label className="auth-field">
+            <span>确认密码</span>
+            <div className="auth-input-wrap">
+              <UserAddOutlined />
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                placeholder="再次输入密码"
+                autoComplete="new-password"
+                required
+              />
+            </div>
+          </label>
+
+          <Checkbox checked={agreed} onChange={(event) => setAgreed(event.target.checked)}>
+            <span className="auth-agreement">
+              我已阅读并同意
+              <a href="/privacy" target="_blank" rel="noreferrer">《隐私政策》</a>
+            </span>
           </Checkbox>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="btn-primary w-full text-white font-semibold py-3 rounded-xl text-base"
-          >
+
+          <button type="submit" disabled={isLoading} className="auth-submit">
             {isLoading ? '注册中...' : '注册'}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-400 mt-4">
-          已有账号？{' '}
-          <button onClick={onSwitchToLogin} className="text-purple-500 hover:underline">
-            去登录
-          </button>
+        <p className="auth-footer">
+          已有账号？
+          <button onClick={onSwitchToLogin}>去登录</button>
         </p>
       </div>
     </div>

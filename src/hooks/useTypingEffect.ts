@@ -17,7 +17,7 @@ export function useTypingEffect(
   const [isComplete, setIsComplete] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const indexRef = useRef(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 当 fullText 变化时重置并开始打字
   useEffect(() => {

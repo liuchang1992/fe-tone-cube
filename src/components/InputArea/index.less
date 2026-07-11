@@ -1,8 +1,36 @@
+.input-area-context {
+  height: calc(100% - 40px);
+}
 
 .input-area {
-    height: 100%;
+  width: 100%;
+  height: 100%;
+  padding: 18px 16px;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.58;
+  resize: none;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+
+  &::placeholder {
+    color: #a6adba;
+  }
+
+  &:focus {
+    border-color: #a78bfa;
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.08);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
 }
-.input-area-context {
-    display: flex;
-    height: 90%;
+
+.input-area--over-limit {
+  border-color: #ef4444;
 }

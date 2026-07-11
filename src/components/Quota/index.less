@@ -13,4 +13,57 @@
 
 .go-login {
     width: 60%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.quota-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    color: #9ca3af;
+    font-size: 24px;
+    transition: color 0.2s ease;
+
+    &:hover {
+        color: #4b5563;
+    }
+}
+
+.quota-icon {
+    margin-bottom: 16px;
+    font-size: 56px;
+    line-height: 1;
+}
+
+.quota-title {
+    margin-bottom: 8px;
+    color: #1f2937;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.quota-desc {
+    margin-bottom: 24px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.quota-primary {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.quota-secondary {
+    color: #9ca3af;
+    font-size: 14px;
+    transition: color 0.2s ease;
+
+    &:hover {
+        color: #4b5563;
+    }
 }

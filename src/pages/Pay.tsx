@@ -1,156 +1,219 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppStore } from '@/store/appStore';
-import apiClient from '@/api/client';
+import {
+  BankOutlined,
+  CheckCircleFilled,
+  CreditCardOutlined,
+  DownOutlined,
+  RocketOutlined,
+  SafetyCertificateOutlined,
+} from '@ant-design/icons';
+import { FaAlipay, FaPaypal, FaWeixin } from 'react-icons/fa';
 
-// 定义套餐类型
+import apiClient from '@/api/client';
+import { useAppStore } from '@/store/appStore';
+import './Pay.less';
+
+type PlanId = 'free' | 'monthly' | 'yearly';
+type PaidPlanId = Exclude<PlanId, 'free'>;
+
 interface PlanOption {
-  id: string;
-  name: string;
-  price: number;
-  days: number;
-  description: string;
-  popular?: boolean; // 是否为推荐套餐
+  id: PlanId;
+  title: string;
+  price: string;
+  unit?: string;
+  oldPrice?: string;
+  badge?: string;
+  save?: string;
+  icon: React.ReactNode;
   features: string[];
+  buttonText: string;
 }
 
-// 套餐数据
 const PLANS: PlanOption[] = [
   {
-    id: 'monthly',
-    name: '月度会员',
-    price: 9.9,
-    days: 30,
-    description: '按月订阅，随时取消',
-    features: ['无限次数转换', '所有风格可用', '无广告体验', '随时取消'],
+    id: 'free',
+    title: '基础版',
+    price: '免费',
+    icon: <CheckCircleFilled />,
+    features: ['每日10次转换', '基础语气模板', '标准转换速度'],
+    buttonText: '当前版本',
   },
   {
-    id: 'quarterly',
-    name: '季度会员',
-    price: 19.9,
-    days: 90,
-    description: '超值性价比，省心省力',
-    popular: true,
-    features: ['无限次数转换', '所有风格可用', '无广告体验', '专属客服支持'],
+    id: 'monthly',
+    title: '专业版',
+    price: '¥29',
+    unit: '/月',
+    oldPrice: '¥59',
+    badge: '推荐',
+    icon: <RocketOutlined />,
+    features: ['每日200次转换', '全部语气模板', '优先转换速度', '风格定制分析', '专属客服支持'],
+    buttonText: '立即订阅',
   },
   {
     id: 'yearly',
-    name: '年度会员',
-    price: 49.9,
-    days: 365,
-    description: '长期使用，最划算的选择',
-    features: ['无限次数转换', '所有风格可用', '无广告体验', '专属客服支持', '新功能优先体验'],
+    title: '旗舰版',
+    price: '¥199',
+    unit: '/年',
+    save: '节省¥149',
+    icon: <SafetyCertificateOutlined />,
+    features: ['无限次转换', '全部高级功能', '极速转换通道', 'API接口调用', '团队协作功能', '专属客服 + 培训'],
+    buttonText: '立即订阅',
   },
+];
+
+const COMPARE_ROWS = [
+  ['转换次数', '10次/天', '200次/天', '无限制'],
+  ['模板数量', '基础模板', '全部模板', '全部模板'],
+  ['转换速度', '标准', '优先', '极速'],
+  ['风格分析', '×', '✓', '✓'],
+  ['客服支持', '×', '✓', '✓'],
+  ['API接口', '×', '×', '✓'],
+];
+
+const PAYMENT_METHODS = [
+  { id: 'wechat', label: '微信支付', icon: <FaWeixin />, color: '#22c55e' },
+  { id: 'alipay', label: '支付宝', icon: <FaAlipay />, color: '#1677ff' },
+  { id: 'card', label: '银行卡', icon: <CreditCardOutlined />, color: '#374151' },
+  { id: 'paypal', label: 'PayPal', icon: <FaPaypal />, color: '#0070ba' },
+];
+
+const FAQS = [
+  ['如何取消自动续费？', '您可以在账户设置中随时取消自动续费功能'],
+  ['退款政策是什么？', '支持7天无理由退款，退款将原路返回'],
+  ['如何开具发票？', '订单完成后可在个人中心申请开具电子发票'],
 ];
 
 export const Pay: React.FC = () => {
   const navigate = useNavigate();
-  const { user, setShowLoginModal } = useAppStore();
-  const [selectedPlan, setSelectedPlan] = useState<string>('quarterly');
-  const [orderNo, setOrderNo] = useState<string>('');
-  const [qrCode, setQrCode] = useState<string>('');
-  const [status, setStatus] = useState<'idle' | 'pending' | 'paid' | 'cancelled'>('idle');
-  const [isLoading, setIsLoading] = useState(false);
+  const { setShowLoginModal, user } = useAppStore();
+  const [agreed, setAgreed] = useState(false);
+  const [coupon, setCoupon] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [orderNo, setOrderNo] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('alipay');
+  const [qrCode, setQrCode] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState<PaidPlanId>('monthly');
+  const [status, setStatus] = useState<'idle' | 'pending' | 'paid' | 'cancelled'>('idle');
 
-  // 检查登录状态
   useEffect(() => {
     if (!user.isLoggedIn) {
-      // navigate('/login');
       setShowLoginModal(true);
     }
-  }, [user, navigate]);
+  }, [setShowLoginModal, user.isLoggedIn]);
 
-  // 轮询支付状态
   useEffect(() => {
     if (!orderNo || status === 'paid' || status === 'cancelled') return;
 
-    const interval = setInterval(async () => {
+    const interval = window.setInterval(async () => {
       try {
         const response = await apiClient.get(`/api/pay/status/${orderNo}`);
         if (response.data.is_paid) {
           setStatus('paid');
-          clearInterval(interval);
-          setTimeout(() => {
+          window.clearInterval(interval);
+          window.setTimeout(() => {
             navigate('/');
             window.location.reload();
           }, 1500);
         }
-      } catch (e) {
-        // 忽略查询错误
+      } catch {
+        // Ignore polling failures; the next tick may recover.
       }
     }, 2000);
 
-    return () => clearInterval(interval);
-  }, [orderNo, status, navigate]);
+    return () => window.clearInterval(interval);
+  }, [navigate, orderNo, status]);
 
-  // 创建订单
+  const activePlan = useMemo(
+    () => PLANS.find((plan) => plan.id === selectedPlan)!,
+    [selectedPlan]
+  );
+
+  const orderInfo = useMemo(() => {
+    if (selectedPlan === 'yearly') {
+      return {
+        duration: '1年',
+        discount: '-¥149',
+        payable: '¥199',
+        subtotal: '¥348',
+      };
+    }
+    return {
+      duration: '1个月',
+      discount: '-¥30',
+      payable: '¥29',
+      subtotal: '¥59',
+    };
+  }, [selectedPlan]);
+
   const handleCreateOrder = async () => {
+    if (!user.isLoggedIn) {
+      setShowLoginModal(true);
+      return;
+    }
+    if (!agreed) {
+      setError('请先阅读并同意会员服务协议和自动续费说明');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
     try {
       const response = await apiClient.post('/api/pay/create', {
         plan_type: selectedPlan,
       });
-      const data = response.data;
-      setOrderNo(data.order_no);
-      setQrCode(data.qr_code);
+      setOrderNo(response.data.order_no);
+      setQrCode(response.data.qr_code);
       setStatus('pending');
     } catch (err: any) {
-      setError(err.message || '创建订单失败，请重试');
+      setError(err.response?.data?.detail || err.message || '创建订单失败，请重试');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 模拟支付（仅开发环境）
   const handleMockPay = async () => {
     if (!orderNo) return;
     try {
       await apiClient.post(`/api/pay/mock-pay/${orderNo}`);
       setStatus('paid');
-      setTimeout(() => {
+      window.setTimeout(() => {
         navigate('/');
         window.location.reload();
       }, 1000);
     } catch (err: any) {
-      setError(err.message || '模拟支付失败');
+      setError(err.response?.data?.detail || err.message || '模拟支付失败');
     }
   };
 
-  // ========== 支付中状态 ==========
   if (status === 'pending') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-10 px-4 flex items-center justify-center">
-        <div className="glass-card rounded-3xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">💳</span>
+      <div className="pay-page pay-page--center">
+        <div className="pay-card">
+          <div className="pay-status-icon">
+            <FaAlipay />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">扫码支付</h2>
-          <p className="text-gray-400 text-sm mb-6">请使用支付宝扫描下方二维码完成支付</p>
+          <h2 className="pay-card-title">扫码支付</h2>
+          <p className="pay-card-desc">请使用支付宝扫描下方二维码完成支付</p>
 
           {qrCode && (
-            <div className="bg-white p-4 rounded-2xl inline-block mb-4 shadow-md">
-              <img src={qrCode} alt="支付二维码" className="w-48 h-48" />
+            <div className="qr-card">
+              <img src={qrCode} alt="支付二维码" className="qr-image" />
             </div>
           )}
 
-          <div className="text-sm text-gray-500 mb-4">
-            订单号：<span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{orderNo}</span>
+          <div className="order-code">
+            订单号：<span>{orderNo}</span>
           </div>
-
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-400 mb-6">
-            <span className="inline-block w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
+          <div className="pay-waiting">
+            <span className="pay-waiting-dot" />
             等待支付...
           </div>
 
-          {/* 模拟支付按钮（仅开发环境） */}
           {import.meta.env.DEV && (
-            <button
-              onClick={handleMockPay}
-              className="w-full py-2.5 text-sm font-medium text-purple-600 border border-purple-200 rounded-xl hover:bg-purple-50 transition-colors mb-3"
-            >
-              🔧 模拟支付（开发环境）
+            <button onClick={handleMockPay} className="mock-pay-btn">
+              模拟支付（开发环境）
             </button>
           )}
 
@@ -160,7 +223,7 @@ export const Pay: React.FC = () => {
               setOrderNo('');
               setQrCode('');
             }}
-            className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+            className="pay-link-btn"
           >
             取消支付
           </button>
@@ -169,20 +232,16 @@ export const Pay: React.FC = () => {
     );
   }
 
-  // ========== 支付成功状态 ==========
   if (status === 'paid') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-10 px-4 flex items-center justify-center">
-        <div className="glass-card rounded-3xl p-8 max-w-md w-full text-center">
-          <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-            <span className="text-5xl">🎉</span>
+      <div className="pay-page pay-page--center">
+        <div className="pay-card">
+          <div className="pay-status-icon pay-status-icon--success">
+            <CheckCircleFilled />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">支付成功！</h2>
-          <p className="text-gray-500 text-sm">恭喜你成为语气魔方会员，所有功能已解锁</p>
-          <button
-            onClick={() => navigate('/')}
-            className="mt-6 btn-primary text-white font-semibold py-3 rounded-xl text-base w-full"
-          >
+          <h2 className="pay-card-title">支付成功！</h2>
+          <p className="pay-success-desc">恭喜你成为语气魔方会员，所有功能已解锁</p>
+          <button onClick={() => navigate('/')} className="pay-start-btn">
             开始使用
           </button>
         </div>
@@ -190,131 +249,163 @@ export const Pay: React.FC = () => {
     );
   }
 
-  // ========== 套餐选择状态 ==========
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-6 px-4 md:py-10">
-      <div className="max-w-5xl mx-auto">
-        {/* 页面头部 */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-purple-100 rounded-full text-purple-600 text-sm font-medium mb-3">
-            <span>⚡</span> 升级会员
-          </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800">
-            解锁<span className="gradient-text">无限</span>可能
-          </h1>
-          <p className="text-gray-400 text-sm mt-2">
-            选择适合你的套餐，开启无限次数转换之旅
-          </p>
-        </div>
+    <div className="pay-page">
+      <main className="pay-wrapper">
+        <header className="pay-header">
+          <h1>升级会员，解锁更多AI能力</h1>
+          <p>选择适合你的套餐方案</p>
+        </header>
 
-        {/* 错误提示 */}
-        {error && (
-          <div className="max-w-md mx-auto mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-600 text-sm flex items-center gap-2">
-            <span>⚠️</span> {error}
-          </div>
-        )}
+        {error && <div className="pay-error">{error}</div>}
 
-        {/* 套餐卡片 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <section className="plan-grid" aria-label="会员套餐">
           {PLANS.map((plan) => {
-            const isSelected = selectedPlan === plan.id;
+            const isFree = plan.id === 'free';
+            const isSelected = plan.id === selectedPlan;
+
             return (
-              <div
+              <article
                 key={plan.id}
-                className={`
-                  relative glass-card rounded-2xl p-6 cursor-pointer transition-all duration-300
-                  ${isSelected ? 'ring-2 ring-purple-500 shadow-xl transform -translate-y-1' : 'hover:shadow-lg hover:transform hover:-translate-y-0.5'}
-                  ${plan.popular ? 'border-purple-200' : ''}
-                `}
-                onClick={() => setSelectedPlan(plan.id)}
+                className={`plan-card ${isSelected ? 'plan-card--selected' : ''}`}
+                onClick={() => !isFree && setSelectedPlan(plan.id as PaidPlanId)}
               >
-                {/* 推荐标签 */}
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs font-bold rounded-full shadow-lg">
-                    最受欢迎
-                  </div>
-                )}
-
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-bold text-gray-800 text-lg">{plan.name}</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">{plan.description}</p>
-                  </div>
-                  {isSelected && (
-                    <span className="w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center text-sm flex-shrink-0">
-                      ✓
-                    </span>
-                  )}
+                {plan.badge && <span className="plan-badge">{plan.badge}</span>}
+                <div className="plan-title-row">
+                  <span className="plan-icon">{plan.icon}</span>
+                  <h2>{plan.title}</h2>
                 </div>
-
-                <div className="mt-4">
-                  <span className="text-4xl font-extrabold text-gray-800">¥{plan.price}</span>
-                  <span className="text-sm text-gray-400 ml-1">/ {plan.days}天</span>
+                <div className="plan-price">
+                  <strong>{plan.price}</strong>
+                  {plan.unit && <span>{plan.unit}</span>}
                 </div>
-
-                <div className="mt-4 space-y-2">
-                  {plan.features.map((feature, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-sm text-gray-500">
-                      <span className="text-purple-400">✓</span> {feature}
-                    </div>
+                {plan.oldPrice && <div className="old-price">{plan.oldPrice}</div>}
+                {plan.save && <span className="save-badge">{plan.save}</span>}
+                <ul>
+                  {plan.features.map((feature) => (
+                    <li key={feature}>
+                      <CheckCircleFilled />
+                      {feature}
+                    </li>
                   ))}
-                </div>
-
+                </ul>
                 <button
-                  className={`
-                    w-full mt-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200
-                    ${isSelected
-                      ? 'btn-gradient text-white shadow-lg shadow-purple-200'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }
-                  `}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPlan(plan.id);
+                  className={`plan-button ${isFree ? 'plan-button--muted' : ''}`}
+                  disabled={isFree}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (!isFree) setSelectedPlan(plan.id as PaidPlanId);
                   }}
                 >
-                  {isSelected ? '当前选择' : '选择套餐'}
+                  {plan.buttonText}
                 </button>
-              </div>
+              </article>
             );
           })}
+        </section>
+
+        <section className="pay-section compare-section">
+          <h2>详细功能对比</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>功能项</th>
+                <th>基础版</th>
+                <th>专业版</th>
+                <th>旗舰版</th>
+              </tr>
+            </thead>
+            <tbody>
+              {COMPARE_ROWS.map((row) => (
+                <tr key={row[0]}>
+                  {row.map((cell, index) => (
+                    <td key={cell} className={cell === '✓' ? 'check-cell' : cell === '×' ? 'cross-cell' : ''}>
+                      {index === 0 ? <strong>{cell}</strong> : cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+
+        <section className="pay-section">
+          <h2>选择支付方式</h2>
+          <div className="payment-grid">
+            {PAYMENT_METHODS.map((method) => (
+              <button
+                key={method.id}
+                className={`payment-card ${paymentMethod === method.id ? 'payment-card--active' : ''}`}
+                onClick={() => setPaymentMethod(method.id)}
+              >
+                <span style={{ color: method.color }}>{method.icon}</span>
+                {method.label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="pay-section order-section">
+          <h2>订单信息</h2>
+          <div className="order-row">
+            <span>套餐名称</span>
+            <strong>{activePlan.title}会员</strong>
+          </div>
+          <div className="order-row">
+            <span>订阅时长</span>
+            <strong>{orderInfo.duration}</strong>
+          </div>
+          <div className="coupon-row">
+            <input
+              value={coupon}
+              onChange={(event) => setCoupon(event.target.value)}
+              placeholder="输入优惠券代码"
+            />
+            <button>应用</button>
+          </div>
+          <div className="order-row">
+            <span>小计</span>
+            <strong>{orderInfo.subtotal}</strong>
+          </div>
+          <div className="order-row discount">
+            <span>优惠</span>
+            <strong>{orderInfo.discount}</strong>
+          </div>
+          <div className="order-total">
+            <span>实付金额</span>
+            <strong>{orderInfo.payable}</strong>
+          </div>
+          <label className="agreement-row">
+            <input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
+            <span>
+              我已阅读并同意
+              <a href="/privacy" target="_blank" rel="noreferrer">《会员服务协议》</a>
+              和
+              <a href="/privacy" target="_blank" rel="noreferrer">《自动续费说明》</a>
+            </span>
+          </label>
+        </section>
+
+        <div className="confirm-pay-wrap">
+          <button onClick={handleCreateOrder} disabled={isLoading} className="confirm-pay-btn">
+            {isLoading ? '创建订单中...' : `确认支付 ${orderInfo.payable}`}
+          </button>
+          <p>支持7天无理由退款</p>
         </div>
 
-        {/* 底部操作栏 */}
-        <div className="mt-8 flex flex-col items-center gap-4">
-          <button
-            onClick={handleCreateOrder}
-            disabled={isLoading}
-            className="btn-primary text-white font-semibold py-3.5 rounded-2xl text-base w-full max-w-md transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-purple-200"
-          >
-            {isLoading ? (
-              <>
-                <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                创建订单...
-              </>
-            ) : (
-              <>
-                <span>💳</span> 立即开通 {PLANS.find(p => p.id === selectedPlan)?.name}
-              </>
-            )}
-          </button>
-          <button
-            onClick={() => navigate('/')}
-            className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            稍后再说，返回首页
-          </button>
-        </div>
-
-        {/* 底部信任标识 */}
-        <div className="mt-8 text-center text-xs text-gray-400 flex flex-wrap justify-center gap-x-4 gap-y-1">
-          <span>🔒 安全支付</span>
-          <span>·</span>
-          <span>随时取消</span>
-          <span>·</span>
-          <span>7天退款保障</span>
-        </div>
-      </div>
+        <section className="pay-section faq-section">
+          <h2>常见问题</h2>
+          {FAQS.map(([question, answer]) => (
+            <details key={question} className="faq-item">
+              <summary>
+                <span>{question}</span>
+                <DownOutlined />
+              </summary>
+              <p>{answer}</p>
+            </details>
+          ))}
+        </section>
+      </main>
     </div>
   );
 };

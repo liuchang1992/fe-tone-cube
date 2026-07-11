@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import apiClient from '@/api/client';
+import './CorpusUpload.less';
 
 export const CorpusUpload: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -17,7 +18,7 @@ export const CorpusUpload: React.FC = () => {
       });
       setStyleSummary(res.data.style_summary);
       alert('上传成功！AI已分析你的写作风格');
-    } catch (e) {
+    } catch {
       alert('上传失败');
     } finally {
       setUploading(false);
@@ -25,26 +26,26 @@ export const CorpusUpload: React.FC = () => {
   };
 
   return (
-    <div className="glass-card rounded-2xl p-6">
-      <h3 className="font-bold text-gray-800 mb-3">📂 上传你的写作样本</h3>
-      <p className="text-sm text-gray-400 mb-4">
+    <div className="corpus-upload glass-card">
+      <h3 className="corpus-upload-title">📂 上传你的写作样本</h3>
+      <p className="corpus-upload-desc">
         上传你之前写过的文章（支持 .txt / .docx），AI将学习你的个人风格
       </p>
       <input
         type="file"
         accept=".txt,.docx"
         onChange={(e) => setFile(e.target.files?.[0] || null)}
-        className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-600 hover:file:bg-purple-100"
+        className="corpus-file-input"
       />
       <button
         onClick={handleUpload}
         disabled={!file || uploading}
-        className="mt-4 btn-primary text-white px-6 py-2 rounded-xl text-sm disabled:opacity-50"
+        className="btn-primary corpus-upload-btn"
       >
         {uploading ? '分析中...' : '上传并分析'}
       </button>
       {styleSummary && (
-        <div className="mt-4 p-3 bg-purple-50 rounded-xl text-sm text-gray-600">
+        <div className="corpus-upload-result">
           <strong>风格分析：</strong>{styleSummary}
         </div>
       )}

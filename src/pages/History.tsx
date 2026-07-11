@@ -1,37 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Modal, message, Pagination, Spin, Empty } from 'antd';
+import { Modal, Pagination, message } from 'antd';
 import {
-  ExclamationCircleFilled,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  CheckOutlined,
+  ClockCircleOutlined,
+  CopyOutlined,
+  DeleteOutlined,
+  DownOutlined,
+  FileTextOutlined,
+  UpOutlined,
 } from '@ant-design/icons';
-import apiClient from '@/api/client';
+
+import {
+  type HistoryItem,
+  clearAllHistory,
+  deleteHistoryItem,
+  getHistoryList,
+} from '@/api/history';
 import { useAppStore } from '@/store/appStore';
-import { getHistoryList, deleteHistoryItem, clearAllHistory, HistoryItem } from '@/api/history';
-
 import './History.less';
-
-const confirm = Modal.confirm;
 
 export const History: React.FC = () => {
   const navigate = useNavigate();
-  const { user, setShowLoginModal } = useAppStore();
-  const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const { user } = useAppStore();
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     if (!user.isLoggedIn) {
-      // navigate('/login');
-      setShowLoginModal(true);
+      navigate('/');
     }
-  }, [user, navigate]);
+  }, [navigate, user.isLoggedIn]);
 
-  // 加载数据
   useEffect(() => {
     if (user.isLoggedIn) {
       fetchHistory(currentPage, pageSize);
@@ -53,44 +59,44 @@ export const History: React.FC = () => {
     }
   };
 
-  const deleteHistory = async (id: number) => {
-    confirm({
-      title: '提示',
-      icon: <ExclamationCircleFilled />,
-      content: '确定删除这条记录吗？',
-      onOk: async() => {
+  const deleteHistory = (item: HistoryItem) => {
+    Modal.confirm({
+      title: '删除历史记录',
+      content: '确定删除这条转换记录吗？此操作不可撤销。',
+      okText: '删除',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk: async () => {
         try {
-          await deleteHistoryItem(id);
+          await deleteHistoryItem(item.id);
           message.success('删除成功');
-          // 重新加载当前页
-          fetchHistory(currentPage, pageSize);
-        } catch (error) {
+          await fetchHistory(currentPage, pageSize);
+        } catch {
           message.error('删除失败');
         }
       },
-      onCancel() {},
     });
   };
 
-  // ========== 新增：清空所有历史 ==========
-  const clearAllHistoryList = async () => {
-    confirm({
-      title: '提示',
-      icon: <ExclamationCircleFilled />,
-      content: '确定清空所有历史记录吗？此操作不可撤销',
-      onOk: async() => {
+  const clearAllHistoryList = () => {
+    Modal.confirm({
+      title: '清空历史记录',
+      content: '确定清空所有历史记录吗？此操作不可撤销。',
+      okText: '清空',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk: async () => {
         try {
           await clearAllHistory();
           message.success('已清空所有历史记录');
+          setExpandedId(null);
           setHistory([]);
           setTotal(0);
           setCurrentPage(1);
-          fetchHistory(1, pageSize);
-        } catch (error) {
+        } catch {
           message.error('清空失败');
         }
       },
-      onCancel() {},
     });
   };
 
@@ -98,115 +104,149 @@ export const History: React.FC = () => {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (err) {
+      message.success('复制成功');
+      window.setTimeout(() => setCopiedId(null), 1800);
+    } catch {
       message.info('复制失败，请手动复制');
     }
   };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return dateStr;
     return date.toLocaleString('zh-CN', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
+      hour12: false,
     });
   };
 
   const onPageChange = (page: number, size?: number) => {
-    setCurrentPage(page);
     if (size && size !== pageSize) {
       setPageSize(size);
-      setCurrentPage(1); // 改变每页条数时重置到第一页
+      setCurrentPage(1);
+      setExpandedId(null);
+      return;
     }
+    setCurrentPage(page);
+    setExpandedId(null);
+  };
+
+  const toggleExpanded = (id: number) => {
+    setExpandedId((current) => (current === id ? null : id));
   };
 
   return (
-    <div className="history-pages">
-      <div className="history-wrapper">
-        <div className="page-navigation">
-          <div className="navigation" onClick={() => navigate('/')}>
+    <div className="history-page">
+      <main className="history-wrapper">
+        <div className="history-header">
+          <button className="page-navigation" onClick={() => navigate('/')}>
             <ArrowLeftOutlined className="back-icon" />
-            <h1 className="navigation-text">转换历史</h1>
-          </div>
-            {history.length > 0 && (
-              <button
-                onClick={clearAllHistoryList}
-                className="delete-all"
-              >
-                清空所有
-              </button>
-            )}
+            <span>历史记录</span>
+          </button>
+
+          {history.length > 0 && (
+            <button onClick={clearAllHistoryList} className="clear-all-btn">
+              清空所有
+            </button>
+          )}
         </div>
-        {history.length === 0 ? (
-          <div className="empty-history">
-            <div className="empty-icon">📭</div>
-            <p className="empty-tips">还没有转换记录</p>
-            <p className="empty-sub-tips">去首页使用一次转换，记录会自动保存</p>
-            <button
-              onClick={() => navigate('/')}
-              className="go-home-btn"
-            >
+
+        {/* <section className="history-summary-card">
+          <div>
+            <h1>你的转换历史</h1>
+            <p>默认收起每条记录，展开后可查看完整原文与转换结果，浏览会更轻快。</p>
+          </div>
+          <div className="summary-count">
+            <ClockCircleOutlined />
+            <strong>{total}</strong>
+            <span>条记录</span>
+          </div>
+        </section> */}
+
+        {loading ? (
+          <div className="history-empty">加载中...</div>
+        ) : history.length === 0 ? (
+          <section className="history-empty">
+            <FileTextOutlined className="history-empty-icon" />
+            <h2>还没有转换记录</h2>
+            <p>去首页完成一次转换，记录会自动保存在这里。</p>
+            <button onClick={() => navigate('/')} className="go-home-btn">
               去转换
             </button>
-          </div>
+          </section>
         ) : (
-          <div>
-              <p className="user-tips">用户转换记录目前只保存3天，使用时请注意。</p>
-              <div className="history-list">
-                {history.map((item) => (
-                  <div key={item.id} className="list-item">
-                    <div className="item-info">
-                      <div className="time-info">
-                        <p className="time">{formatDate(item.created_at)}</p>
-                        <p className="style">{item.style}</p>
+          <section className="history-list">
+            {history.map((item) => {
+              const expanded = expandedId === item.id;
+
+              return (
+                <article key={item.id} className={`history-card ${expanded ? 'history-card--expanded' : ''}`}>
+                  <button className="history-card-summary" onClick={() => toggleExpanded(item.id)}>
+                    <div className="history-summary-main">
+                      <div className="history-meta">
+                        <span className="history-time">
+                          <ClockCircleOutlined />
+                          {formatDate(item.created_at)}
+                        </span>
+                        <span className="style-badge">{item.style}</span>
                       </div>
-                      <div className="operate-context">
+                      <p className="history-preview">{item.output_text}</p>
+                    </div>
+                    <span className="expand-indicator">
+                      {expanded ? <UpOutlined /> : <DownOutlined />}
+                    </span>
+                  </button>
+
+                  {expanded && (
+                    <div className="history-card-body">
+                      <div className="history-actions">
                         <button
                           onClick={() => copyText(item.output_text, item.id)}
-                          className={`copy-item ${
-                            copiedId === item.id
-                              ? 'success'
-                              : 'info'
-                          }`}
-                          title="复制转换结果"
+                          className={`copy-btn ${copiedId === item.id ? 'copy-btn--done' : ''}`}
                         >
-                          {copiedId === item.id ? '已复制' : '复制'}
+                          {copiedId === item.id ? <CheckOutlined /> : <CopyOutlined />}
+                          {copiedId === item.id ? '已复制' : '复制结果'}
                         </button>
-                        <button
-                          onClick={() => deleteHistory(item.id)}
-                          className="delete-item"
-                          title="删除"
-                        >
+                        <button onClick={() => deleteHistory(item)} className="delete-btn">
+                          <DeleteOutlined />
                           删除
                         </button>
                       </div>
+
+                      <div className="history-text-grid">
+                        <div className="text-block source-block">
+                          <h3>原文</h3>
+                          <p>{item.input_text}</p>
+                        </div>
+                        <div className="text-block result-block">
+                          <h3>转换结果</h3>
+                          <p>{item.output_text}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="source-text">
-                        原文：{item.input_text}
-                    </div>
-                    <div className="transform-text">
-                        转换：{item.output_text}
-                    </div>
-                  </div>
-                ))}
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <Pagination
-                    current={currentPage}
-                    pageSize={pageSize}
-                    total={total}
-                    onChange={onPageChange}
-                    showSizeChanger
-                    pageSizeOptions={['5', '10', '20', '50']}
-                    showTotal={(total) => `共 ${total} 条记录`}
-                  />
-                </div>
-              </div>
-          </div>
+                  )}
+                </article>
+              );
+            })}
+
+            <div className="history-pagination">
+              <Pagination
+                current={currentPage}
+                pageSize={pageSize}
+                total={total}
+                onChange={onPageChange}
+                showSizeChanger
+                pageSizeOptions={['5', '10', '20', '50']}
+                showTotal={(count) => `共 ${count} 条记录`}
+              />
+            </div>
+          </section>
         )}
-      </div>
+      </main>
     </div>
   );
 };

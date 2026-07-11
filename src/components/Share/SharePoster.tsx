@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiDownload, FiShare2, FiX } from 'react-icons/fi';
+import './SharePoster.less';
 
 interface SharePosterProps {
   isOpen: boolean;
@@ -208,38 +209,38 @@ export const SharePoster: React.FC<SharePosterProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
+      className="modal-mask modal-mask--strong"
       onClick={onClose}
     >
       <div
-        className="relative max-w-md w-full bg-white rounded-3xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto"
+        className="share-poster"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors z-10"
+          className="share-poster-close"
         >
           <FiX size={24} />
         </button>
 
-        <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">
+        <h3 className="share-poster-title">
           📸 分享你的转换成果
         </h3>
 
         {/* 海报预览（Canvas） */}
-        <div className="rounded-2xl overflow-hidden border border-gray-200/50 mb-4 flex justify-center bg-gray-50">
+        <div className="poster-preview">
           <canvas
             ref={canvasRef}
-            className="w-full h-auto max-h-[400px] object-contain"
+            className="poster-canvas"
           />
         </div>
 
         {/* 操作按钮 */}
-        <div className="flex gap-3">
+        <div className="share-actions">
           <button
             onClick={handleDownload}
             disabled={!posterDataUrl}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50 text-sm font-medium"
+            className="share-action-btn share-action-btn--plain"
           >
             <FiDownload />
             保存图片
@@ -247,7 +248,7 @@ export const SharePoster: React.FC<SharePosterProps> = ({
           <button
             onClick={handleShare}
             disabled={isGenerating || !posterDataUrl}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50 text-sm font-medium"
+            className="share-action-btn share-action-btn--primary"
           >
             <FiShare2 />
             {isGenerating ? '处理中...' : '分享'}
