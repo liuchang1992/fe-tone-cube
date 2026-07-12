@@ -295,7 +295,9 @@ export const Corpus: React.FC = () => {
 
             <div className="file-column">
               <h2>方式二：上传文档</h2>
-              <p className="file-hint">支持 .txt .docx .pdf 格式</p>
+              <p className="file-hint">
+                支持 .txt .docx .pdf 格式，内容最多 50000 个字符，文件最大 2 MB
+              </p>
               <div
                 className={`drop-zone ${selectedFile ? 'drop-zone--selected' : ''}`}
                 onClick={() => fileInputRef.current?.click()}

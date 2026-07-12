@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CloseOutlined, LockOutlined, UserOutlined } from '@ant-design/icons';
+import { message } from 'antd';
 
 import { login } from '@/api/auth';
 import { useAppStore } from '@/store/appStore';
@@ -17,7 +18,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   onSwitchToRegister,
 }) => {
   const { fetchQuota, setUser } = useAppStore();
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
@@ -25,7 +25,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   if (!isOpen) return null;
 
   const resetForm = () => {
-    setError('');
     setPassword('');
     setUsername('');
   };
@@ -37,7 +36,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError('');
     setIsLoading(true);
 
     try {
@@ -45,8 +43,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       setUser({ username: result.username, isLoggedIn: true });
       await fetchQuota();
       handleClose();
-    } catch (err: any) {
-      setError(err.message || '登录失败，请稍后再试');
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '登录失败，请稍后再试');
     } finally {
       setIsLoading(false);
     }
@@ -68,8 +66,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             <p>登录后同步你的转换历史与专属语料库</p>
           </div>
         </div>
-
-        {error && <div className="auth-alert">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
           <label className="auth-field">

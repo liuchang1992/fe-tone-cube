@@ -18,7 +18,12 @@ export const convertText = async (params: ConvertRequest): Promise<string> => {
   return data.result;
 };
 
-export const getQuota = async (): Promise<number> => {
-  const { data } = await apiClient.get<{ remaining: number }>('/api/quota');
-  return data.remaining;
+export interface QuotaResponse {
+  remaining: number;
+  document_remaining: number;
+}
+
+export const getQuota = async (): Promise<QuotaResponse> => {
+  const { data } = await apiClient.get<QuotaResponse>('/api/quota');
+  return data;
 };

@@ -40,15 +40,15 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
     event.preventDefault();
 
     if (!agreed) {
-      message.info('请先阅读并同意隐私政策');
+      message.warning('请先阅读并同意隐私政策');
       return;
     }
     if (password !== confirmPassword) {
-      message.info('两次输入的密码不一致');
+      message.warning('两次输入的密码不一致');
       return;
     }
     if (password.length < 8) {
-      message.info('密码长度至少 8 位');
+      message.warning('密码长度至少 8 位');
       return;
     }
 
@@ -59,8 +59,8 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
       resetForm();
       onClose();
       onSwitchToLogin();
-    } catch (err: any) {
-      message.info(err.message || '注册失败，请稍后再试');
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '注册失败，请稍后再试');
     } finally {
       setIsLoading(false);
     }

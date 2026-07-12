@@ -1,17 +1,45 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Modal, message } from 'antd';
 import { FileTextOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
 import { useAppStore } from '@/store/appStore';
 
+const MAX_DOCUMENT_FILE_BYTES = 2_000_000;
+
 export const DocumentConvertButton: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { convertDocument, isLoading, outputText, setShowLoginModal, user } = useAppStore();
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [fileName, setFileName] = useState('');
-  const [docxBase64, setDocxBase64] = useState<string | null>(null);
-  const [docxFileName, setDocxFileName] = useState<string | null>(null);
+  const {
+    convertDocument,
+    documentRemainingQuota,
+    isDocumentLoading,
+    documentTaskMessage,
+    documentTaskProgress,
+    documentTaskResult,
+    isDocumentPreviewOpen,
+    resumeDocumentConversion,
+    setDocumentPreviewOpen,
+    setShowLoginModal,
+    user,
+  } = useAppStore();
   const [downloadFormat, setDownloadFormat] = useState<'txt' | 'docx'>('txt');
+  const fileName = documentTaskResult?.file_name || '';
+  const documentOutputText = documentTaskResult?.result || '';
+  const docxBase64 = documentTaskResult?.docx_base64 || null;
+  const docxFileName = documentTaskResult?.docx_file_name || null;
+  const isDocumentQuotaExhausted = (
+    user.isLoggedIn
+    && documentRemainingQuota !== null
+    && documentRemainingQuota <= 0
+  );
+  const documentHint = isDocumentLoading
+    ? documentTaskMessage || '文档正在后台转换，可继续使用普通文案转换'
+    : isDocumentQuotaExhausted
+      ? '文档转换次数已用完，请明天再试或联系管理员增加次数'
+      : '文档转换每日限用 1 次；文档内容最多 8000 个字符，文件最大 2 MB';
+
+  useEffect(() => {
+    void resumeDocumentConversion();
+  }, [resumeDocumentConversion]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -23,21 +51,19 @@ export const DocumentConvertButton: React.FC = () => {
       message.warning('请上传 .txt、.docx 或 .pdf 文件');
       return;
     }
-
-    const result = await convertDocument(file);
-    if (result) {
-      setFileName(result.file_name);
-      setDocxBase64(result.docx_base64 || null);
-      setDocxFileName(result.docx_file_name || null);
-      setDownloadFormat(result.docx_base64 ? 'docx' : 'txt');
-      setPreviewOpen(true);
+    if (file.size > MAX_DOCUMENT_FILE_BYTES) {
+      message.warning('文件过大，最大支持 2 MB');
+      return;
     }
+
+    setDownloadFormat(file.name.toLowerCase().endsWith('.docx') ? 'docx' : 'txt');
+    await convertDocument(file);
   };
 
   const downloadResult = () => {
-    if (!outputText) return;
+    if (!documentOutputText) return;
     const baseName = fileName.replace(/\.[^.]+$/, '') || '转换结果';
-    const blob = new Blob([outputText], { type: 'text/plain;charset=utf-8' });
+    const blob = new Blob([documentOutputText], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -47,9 +73,13 @@ export const DocumentConvertButton: React.FC = () => {
   };
 
   const copyResult = async () => {
-    if (!outputText) return;
-    await navigator.clipboard.writeText(outputText);
-    message.success('复制成功');
+    if (!documentOutputText) return;
+    try {
+      await navigator.clipboard.writeText(documentOutputText);
+      message.success('复制成功');
+    } catch {
+      message.error('复制失败，请手动复制');
+    }
   };
 
   const downloadDocx = () => {
@@ -95,14 +125,32 @@ export const DocumentConvertButton: React.FC = () => {
           type="button"
           className="document-convert-btn"
           onClick={openFilePicker}
-          disabled={isLoading}
+          disabled={isDocumentLoading || isDocumentQuotaExhausted}
+          title={isDocumentQuotaExhausted ? '文档转换次数已用完' : undefined}
         >
           <FileTextOutlined />
-          上传文档转换
+          {isDocumentQuotaExhausted
+            ? '文档次数已用完'
+            : isDocumentLoading
+              ? `文档转换中 ${documentTaskProgress}%`
+              : '上传文档转换'}
         </button>
-        <span className="document-convert-hint" tabIndex={0} aria-label="文档转换每日限用 1 次">
+        {documentTaskResult && !isDocumentLoading && (
+          <button
+            type="button"
+            className="document-convert-btn"
+            onClick={() => setDocumentPreviewOpen(true)}
+          >
+            最近结果
+          </button>
+        )}
+        <span
+          className="document-convert-hint"
+          tabIndex={0}
+          aria-label={documentHint}
+        >
           <InfoCircleOutlined />
-          <span className="document-convert-tooltip">文档转换每日限用 1 次</span>
+          <span className="document-convert-tooltip">{documentHint}</span>
         </span>
       </div>
       <input
@@ -115,8 +163,8 @@ export const DocumentConvertButton: React.FC = () => {
 
       <Modal
         title={fileName ? `文档转换预览：${fileName}` : '文档转换预览'}
-        open={previewOpen}
-        onCancel={() => setPreviewOpen(false)}
+        open={isDocumentPreviewOpen && Boolean(documentTaskResult)}
+        onCancel={() => setDocumentPreviewOpen(false)}
         className="document-convert-modal"
         footer={[
           <button key="copy" className="document-modal-secondary" onClick={copyResult}>
@@ -138,7 +186,7 @@ export const DocumentConvertButton: React.FC = () => {
         ]}
         width={720}
       >
-        <div className="document-preview">{outputText}</div>
+        <div className="document-preview">{documentOutputText}</div>
       </Modal>
     </>
   );

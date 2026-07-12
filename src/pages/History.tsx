@@ -106,7 +106,7 @@ export const History: React.FC = () => {
       message.success('复制成功');
       window.setTimeout(() => setCopiedId(null), 1800);
     } catch {
-      message.info('复制失败，请手动复制');
+      message.error('复制失败，请手动复制');
     }
   };
 

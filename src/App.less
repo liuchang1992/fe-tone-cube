@@ -100,30 +100,31 @@
 
 .document-convert-tooltip {
   position: absolute;
-  left: calc(100% + 8px);
-  top: 50%;
+  top: calc(100% + 8px);
+  right: 0;
   z-index: 20;
-  width: max-content;
-  max-width: 180px;
+  width: 240px;
+  max-width: min(240px, calc(100vw - 32px));
   padding: 7px 9px;
   color: #fff;
   font-size: 12px;
   font-weight: 700;
   line-height: 1.4;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: left;
   background: #111827;
   border-radius: 6px;
   box-shadow: 0 8px 18px rgba(17, 24, 39, 0.16);
   opacity: 0;
   pointer-events: none;
-  transform: translate(-4px, -50%);
+  transform: translateY(-4px);
   transition: opacity 0.16s ease, transform 0.16s ease;
 }
 
 .document-convert-hint:hover .document-convert-tooltip,
 .document-convert-hint:focus-visible .document-convert-tooltip {
   opacity: 1;
-  transform: translate(0, -50%);
+  transform: translateY(0);
 }
 
 .document-convert-input {

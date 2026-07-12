@@ -39,8 +39,12 @@ export const OutputArea: React.FC = () => {
   const handleCopy = async () => {
     const textToCopy = isComplete ? outputText : displayText;
     if (!textToCopy) return;
-    await navigator.clipboard.writeText(textToCopy);
-    message.success('复制成功');
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      message.success('复制成功');
+    } catch {
+      message.error('复制失败，请手动复制');
+    }
   };
 
   const outputLength = (isComplete ? outputText : displayText)?.length || 0;
