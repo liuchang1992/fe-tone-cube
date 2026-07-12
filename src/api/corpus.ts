@@ -7,6 +7,7 @@ export interface CorpusItem {
   style_summary: string;
   scene: string;
   created_at: string;
+  is_active?: boolean;
 }
 
 // 上传文本语料

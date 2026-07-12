@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeftOutlined,
-  CheckCircleFilled,
   FileTextOutlined,
   InboxOutlined,
 } from '@ant-design/icons';
@@ -25,8 +24,14 @@ const SCENE_OPTIONS = [
   { value: 'formal', label: '职场汇报' },
   { value: 'xiaohongshu', label: '小红书种草' },
   { value: 'wechat', label: '微信聊天' },
-  { value: 'academic', label: '学术严谨' },
+  { value: 'email', label: '邮件沟通' },
+  { value: 'academic', label: '专业严谨' },
   { value: 'marketing', label: '营销文案' },
+  { value: 'customer_service', label: '客户沟通' },
+  { value: 'concise', label: '简洁直接' },
+  { value: 'polite', label: '温和礼貌' },
+  { value: 'moments', label: '朋友圈分享' },
+  { value: 'short_video', label: '短视频口播' },
 ];
 
 export const Corpus: React.FC = () => {
@@ -85,12 +90,37 @@ export const Corpus: React.FC = () => {
     await handleFileUpload();
   };
 
+  const confirmSceneOverwrite = async () => {
+    try {
+      const data = await getCorpusList(1, 1, selectedScene);
+      if (data.total === 0) return true;
+    } catch {
+      return true;
+    }
+
+    const sceneLabel = getSceneLabel(selectedScene);
+    return new Promise<boolean>((resolve) => {
+      Modal.confirm({
+        title: '覆盖已有语料分析',
+        content: `「${sceneLabel}」已经有一份语料分析。本次上传会覆盖之前的分析结果，是否继续？`,
+        okText: '覆盖并继续',
+        cancelText: '取消',
+        okButtonProps: { danger: true },
+        onOk: () => resolve(true),
+        onCancel: () => resolve(false),
+      });
+    });
+  };
+
   const handleTextUpload = async () => {
     const content = textContent.trim();
     if (content.length < MIN_TEXT_LENGTH) {
       message.warning(`请至少输入 ${MIN_TEXT_LENGTH} 个字符`);
       return;
     }
+
+    const confirmed = await confirmSceneOverwrite();
+    if (!confirmed) return;
 
     setUploading(true);
     try {
@@ -110,6 +140,9 @@ export const Corpus: React.FC = () => {
       message.warning('请先选择文件');
       return;
     }
+
+    const confirmed = await confirmSceneOverwrite();
+    if (!confirmed) return;
 
     setUploading(true);
     try {
@@ -202,6 +235,16 @@ export const Corpus: React.FC = () => {
     return `${dateText} · ${getSceneLabel(item.scene)} · 已分析`;
   };
 
+  const getUsageStatus = (item: CorpusItem) => {
+    if (item.is_active === false) return '已停用';
+    return item.scene === 'all' ? '默认兜底' : '使用中';
+  };
+
+  const getUsageBadgeClass = (item: CorpusItem) => {
+    if (item.is_active === false) return 'usage-badge usage-badge--inactive';
+    return item.scene === 'all' ? 'usage-badge usage-badge--fallback' : 'usage-badge';
+  };
+
   return (
     <div className="library-page">
       <main className="library-wrapper">
@@ -216,17 +259,17 @@ export const Corpus: React.FC = () => {
 
           <div className="scene-selector">
             <span>适用类型</span>
-            <div className="scene-options">
+            <select
+              className="scene-select"
+              value={selectedScene}
+              onChange={(event) => setSelectedScene(event.target.value)}
+            >
               {SCENE_OPTIONS.map((scene) => (
-                <button
-                  key={scene.value}
-                  className={selectedScene === scene.value ? 'scene-option scene-option--active' : 'scene-option'}
-                  onClick={() => setSelectedScene(scene.value)}
-                >
+                <option key={scene.value} value={scene.value}>
                   {scene.label}
-                </button>
+                </option>
               ))}
-            </div>
+            </select>
           </div>
 
           <div className="upload-grid">
@@ -252,7 +295,7 @@ export const Corpus: React.FC = () => {
 
             <div className="file-column">
               <h2>方式二：上传文档</h2>
-              <p className="file-hint">支持 .doc .txt 格式</p>
+              <p className="file-hint">支持 .txt .docx .pdf 格式</p>
               <div
                 className={`drop-zone ${selectedFile ? 'drop-zone--selected' : ''}`}
                 onClick={() => fileInputRef.current?.click()}
@@ -265,7 +308,7 @@ export const Corpus: React.FC = () => {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".txt,.doc,.docx"
+                accept=".txt,.docx,.pdf"
                 className="hidden-file-input"
                 onChange={(event) => {
                   setSelectedFile(event.target.files?.[0] || null);
@@ -296,40 +339,54 @@ export const Corpus: React.FC = () => {
         <section className="records-section">
           <div className="records-header">
             <h2>已上传语料分析记录</h2>
-            <div className="filter-options">
-              {SCENE_OPTIONS.map((scene) => {
-                const activeValue = filterScene || 'all';
-                return (
-                  <button
-                    key={scene.value}
-                    className={activeValue === scene.value ? 'filter-option filter-option--active' : 'filter-option'}
-                    onClick={() => changeFilterScene(scene.value)}
-                  >
+            <label className="filter-select-wrap">
+              <span>筛选</span>
+              <select
+                className="filter-select"
+                value={filterScene || 'all'}
+                onChange={(event) => changeFilterScene(event.target.value)}
+              >
+                {SCENE_OPTIONS.map((scene) => (
+                  <option key={scene.value} value={scene.value}>
                     {scene.label}
-                  </button>
-                );
-              })}
-            </div>
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
 
           {loading ? (
             <div className="records-empty">加载中...</div>
           ) : corpusList.length === 0 ? (
-            <div className="records-empty">还没有上传记录</div>
+            <section className="records-empty">
+              <FileTextOutlined className="records-empty-icon" />
+              <h2>{filterScene ? '当前类型暂无语料' : '还没有上传语料'}</h2>
+              <p>
+                {filterScene
+                  ? '切换筛选类型，或上传一份适用于当前类型的文案。'
+                  : '上传文章或文案后，魔方会分析你的写作风格并用于后续转换。'}
+              </p>
+              <button
+                className="go-upload-btn"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
+                去上传语料
+              </button>
+            </section>
           ) : (
             <>
               <div className="records-list">
                 {corpusList.map((item) => (
                   <article className="record-card" key={item.id}>
                     <div className="record-main">
-                      <FileTextOutlined className="record-icon" />
                       <div className="record-info">
-                        <h3>{item.file_name}</h3>
+                        <div className="record-title-row">
+                          <h3>{item.file_name}</h3>
+                          <span className={getUsageBadgeClass(item)}>
+                            {getUsageStatus(item)}
+                          </span>
+                        </div>
                         <p>{formatMeta(item)}</p>
-                        <span className="status-badge">
-                          <CheckCircleFilled />
-                          已完成
-                        </span>
                       </div>
                     </div>
 

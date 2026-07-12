@@ -6,6 +6,7 @@ import { ArrowRightOutlined } from '@ant-design/icons';
 
 import { LoginModal } from '@/components/Auth/LoginModal';
 import { RegisterModal } from '@/components/Auth/RegisterModal';
+import { DocumentConvertButton } from '@/components/DocumentConvert/DocumentConvertButton';
 import { InputArea } from '@/components/InputArea/InputArea';
 import { Layout } from '@/components/Layout/Layout';
 import { OutputArea } from '@/components/OutputArea/OutputArea';
@@ -42,6 +43,7 @@ function HomePage() {
           <div className="agent-panel">
             <div className="container-title">
               <h2 className="title">原始文本</h2>
+              <DocumentConvertButton />
             </div>
             <InputArea />
           </div>
@@ -65,7 +67,7 @@ function HomePage() {
         </section>
 
         <section className="quick-transform" aria-label="快速转换模板">
-          <p className="quick-title">快速转换模板</p>
+          <p className="quick-title">使用场景</p>
           <StyleSelector />
           <div className="transform-btn">
             <button onClick={convert} disabled={isLoading} className="btn">
@@ -79,6 +81,7 @@ function HomePage() {
               )}
             </button>
           </div>
+          <p className="ai-disclaimer">语气魔方 · AI 辅助生成内容仅供参考。</p>
         </section>
       </main>
     </div>

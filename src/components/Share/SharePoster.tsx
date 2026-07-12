@@ -14,8 +14,14 @@ const STYLE_MAP: Record<string, string> = {
   formal: '职场汇报',
   xiaohongshu: '小红书种草',
   wechat: '微信私聊',
-  academic: '学术严谨',
+  email: '邮件沟通',
+  academic: '专业严谨',
   marketing: '营销文案',
+  customer_service: '客户沟通',
+  concise: '简洁直接',
+  polite: '温和礼貌',
+  moments: '朋友圈分享',
+  short_video: '短视频口播',
 };
 
 export const SharePoster: React.FC<SharePosterProps> = ({

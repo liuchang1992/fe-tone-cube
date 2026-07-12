@@ -32,7 +32,7 @@ apiClient.interceptors.response.use(
         localStorage.removeItem('username');
       }
     }
-    const msg = error.response?.data?.error || error.message || '网络错误';
+    const msg = error.response?.data?.error || error.response?.data?.detail || error.message || '网络错误';
     return Promise.reject(new Error(msg));
   }
 );

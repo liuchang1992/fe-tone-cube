@@ -4,7 +4,6 @@ import { Modal, Pagination, message } from 'antd';
 import {
   ArrowLeftOutlined,
   CheckOutlined,
-  ClockCircleOutlined,
   CopyOutlined,
   DeleteOutlined,
   DownOutlined,
@@ -179,59 +178,60 @@ export const History: React.FC = () => {
             </button>
           </section>
         ) : (
-          <section className="history-list">
-            {history.map((item) => {
-              const expanded = expandedId === item.id;
+          <section className="history-section">
+            <div className="history-list">
+              {history.map((item) => {
+                const expanded = expandedId === item.id;
 
-              return (
-                <article key={item.id} className={`history-card ${expanded ? 'history-card--expanded' : ''}`}>
-                  <button className="history-card-summary" onClick={() => toggleExpanded(item.id)}>
-                    <div className="history-summary-main">
-                      <div className="history-meta">
-                        <span className="history-time">
-                          <ClockCircleOutlined />
-                          {formatDate(item.created_at)}
-                        </span>
-                        <span className="style-badge">{item.style}</span>
-                      </div>
-                      <p className="history-preview">{item.output_text}</p>
-                    </div>
-                    <span className="expand-indicator">
-                      {expanded ? <UpOutlined /> : <DownOutlined />}
-                    </span>
-                  </button>
-
-                  {expanded && (
-                    <div className="history-card-body">
-                      <div className="history-actions">
-                        <button
-                          onClick={() => copyText(item.output_text, item.id)}
-                          className={`copy-btn ${copiedId === item.id ? 'copy-btn--done' : ''}`}
-                        >
-                          {copiedId === item.id ? <CheckOutlined /> : <CopyOutlined />}
-                          {copiedId === item.id ? '已复制' : '复制结果'}
-                        </button>
-                        <button onClick={() => deleteHistory(item)} className="delete-btn">
-                          <DeleteOutlined />
-                          删除
-                        </button>
-                      </div>
-
-                      <div className="history-text-grid">
-                        <div className="text-block source-block">
-                          <h3>原文</h3>
-                          <p>{item.input_text}</p>
+                return (
+                  <article key={item.id} className={`history-card ${expanded ? 'history-card--expanded' : ''}`}>
+                    <button className="history-card-summary" onClick={() => toggleExpanded(item.id)}>
+                      <div className="history-summary-main">
+                        <div className="history-meta">
+                          <span className="history-time">
+                            {formatDate(item.created_at)}
+                          </span>
+                          <span className="style-badge">{item.style}</span>
                         </div>
-                        <div className="text-block result-block">
-                          <h3>转换结果</h3>
-                          <p>{item.output_text}</p>
+                        <p className="history-preview">{item.output_text}</p>
+                      </div>
+                      <span className="expand-indicator">
+                        {expanded ? <UpOutlined /> : <DownOutlined />}
+                      </span>
+                    </button>
+
+                    {expanded && (
+                      <div className="history-card-body">
+                        <div className="history-actions">
+                          <button
+                            onClick={() => copyText(item.output_text, item.id)}
+                            className={`copy-btn ${copiedId === item.id ? 'copy-btn--done' : ''}`}
+                          >
+                            {copiedId === item.id ? <CheckOutlined /> : <CopyOutlined />}
+                            {copiedId === item.id ? '已复制' : '复制结果'}
+                          </button>
+                          <button onClick={() => deleteHistory(item)} className="delete-btn">
+                            <DeleteOutlined />
+                            删除
+                          </button>
+                        </div>
+
+                        <div className="history-text-grid">
+                          <div className="text-block source-block">
+                            <h3>原文</h3>
+                            <p>{item.input_text}</p>
+                          </div>
+                          <div className="text-block result-block">
+                            <h3>转换结果</h3>
+                            <p>{item.output_text}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </article>
-              );
-            })}
+                    )}
+                  </article>
+                );
+              })}
+            </div>
 
             <div className="history-pagination">
               <Pagination

@@ -14,7 +14,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  // margin-bottom: 24px;
+  margin-bottom: 24px;
 }
 
 .page-navigation {
@@ -37,17 +37,17 @@
 }
 
 .clear-all-btn {
-  height: 36px;
-  padding: 0 14px;
+  height: 34px;
+  padding: 0 12px;
   color: #ef4444;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   background: #fff;
   border: 1px solid #fee2e2;
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background 0.18s ease, border-color 0.18s ease;
-  margin-bottom: 14px;
+
   &:hover {
     background: #fef2f2;
     border-color: #fecaca;
@@ -112,33 +112,41 @@
 .history-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-}
-
-.history-card {
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
   overflow: hidden;
-  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.history-card {
+  background: transparent;
+  border-bottom: 1px solid #eef0f4;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+  transition: background 0.18s ease;
 
   &:hover {
-    box-shadow: 0 8px 24px rgba(17, 24, 39, 0.06);
+    background: #fafbfc;
+  }
+
+  &:last-of-type {
+    border-bottom: 0;
   }
 }
 
 .history-card--expanded {
-  box-shadow: 0 10px 28px rgba(17, 24, 39, 0.08);
+  background: #fbfaff;
 }
 
 .history-card-summary {
   width: 100%;
-  min-height: 72px;
+  min-height: 68px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  padding: 14px 22px;
+  gap: 16px;
+  padding: 13px 18px;
   text-align: left;
   background: transparent;
   border: 0;
@@ -153,25 +161,24 @@
 .history-meta {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 
 .history-time {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
   color: #6b7280;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .style-badge {
-  height: 26px;
+  height: 22px;
   display: inline-flex;
   align-items: center;
-  padding: 0 14px;
+  padding: 0 10px;
   color: #7c3aed;
   font-size: 12px;
   font-weight: 800;
@@ -184,25 +191,24 @@
   overflow: hidden;
   color: #4b5563;
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.45;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .expand-indicator {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
   color: #7c3aed;
-  background: #f5f3ff;
-  border-radius: 50%;
+  font-size: 12px;
 }
 
 .history-card-body {
-  padding: 0 22px 22px;
+  padding: 0 18px 18px;
   animation: historyPanelIn 0.18s ease;
 }
 
@@ -211,17 +217,17 @@
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .copy-btn,
 .delete-btn {
-  height: 34px;
+  height: 30px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 0 12px;
-  font-size: 14px;
+  padding: 0 8px;
+  font-size: 13px;
   font-weight: 800;
   background: transparent;
   border: 0;
@@ -257,20 +263,20 @@
 .history-text-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
+  gap: 12px;
 }
 
 .text-block {
-  min-height: 92px;
-  max-height: 220px;
+  min-height: 86px;
+  max-height: 200px;
   overflow-y: auto;
-  padding: 16px;
+  padding: 12px;
   background: #fafbfc;
   border: 1px solid #eef0f4;
-  border-radius: 10px;
+  border-radius: 8px;
 
   h3 {
-    margin: 0 0 10px;
+    margin: 0 0 8px;
     color: #374151;
     font-size: 13px;
     font-weight: 900;
@@ -293,8 +299,8 @@
 .history-pagination {
   display: flex;
   justify-content: flex-end;
-  margin-top: 10px;
-  padding: 8px 0 0;
+  margin-top: 18px;
+  padding: 0;
 }
 
 .history-empty {
@@ -406,11 +412,11 @@
   }
 
   .history-card-summary {
-    padding: 16px 18px;
+    padding: 14px 16px;
   }
 
   .history-card-body {
-    padding: 0 18px 22px;
+    padding: 0 16px 16px;
   }
 
   .history-pagination {

@@ -72,7 +72,7 @@ export const OutputArea: React.FC = () => {
       {(displayText || outputText) && !isLoading && (
         <div className="output-info">
           <span>{outputLength} 字</span>
-          <button onClick={handleCopy} className="copy-btn" aria-label="复制结果">
+          <button onClick={handleCopy} className="copy-btn" aria-label="复制结果" title="复制结果">
             <CopyOutlined />
           </button>
         </div>

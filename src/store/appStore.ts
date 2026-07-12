@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { message } from 'antd';
 import { convertText, getQuota } from '@/api/convert';
+import { convertDocumentFile, type DocumentConvertResponse } from '@/api/documentConvert';
 import { getStoredUsername } from '@/api/auth';
 import { getVisitorId } from '@/utils/visitorId';
 
@@ -32,6 +33,7 @@ interface AppState {
   setShowQuotaAlert: (show: boolean) => void;
   logout: () => void;
   convert: () => Promise<void>;
+  convertDocument: (file: File) => Promise<DocumentConvertResponse | null>;
   fetchQuota: () => Promise<void>;
   reset: () => void;
 }
@@ -103,6 +105,33 @@ export const useAppStore = create<AppState>((set, get) => ({
       } else {
         set({ error: errorMsg, isLoading: false });
       }
+    }
+  },
+
+  convertDocument: async (file) => {
+    const { selectedStyle } = get();
+    set({ isLoading: true, error: null, outputText: '' });
+
+    try {
+      const result = await convertDocumentFile(file, selectedStyle);
+      set({
+        inputText: result.source_text,
+        outputText: result.result,
+        isLoading: false,
+      });
+      await get().fetchQuota();
+      return result;
+    } catch (err: any) {
+      const errorMsg = err.message || '文档转换失败，请稍后重试';
+      if (errorMsg.includes('次数已用完') || errorMsg.includes('免费次数')) {
+        set({ error: errorMsg, isLoading: false });
+        const user = get().user;
+        user.isLoggedIn ? message.info('您的转换次数已用完') : set({ showQuotaAlert: true });
+      } else {
+        set({ error: errorMsg, isLoading: false });
+        message.error(errorMsg);
+      }
+      return null;
     }
   },
 
