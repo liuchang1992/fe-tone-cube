@@ -113,7 +113,7 @@ export const Pay: React.FC = () => {
           setStatus('paid');
           window.clearInterval(interval);
           window.setTimeout(() => {
-            navigate('/');
+            navigate('/convert');
             window.location.reload();
           }, 1500);
         }
@@ -179,7 +179,7 @@ export const Pay: React.FC = () => {
       await apiClient.post(`/api/pay/mock-pay/${orderNo}`);
       setStatus('paid');
       window.setTimeout(() => {
-        navigate('/');
+        navigate('/convert');
         window.location.reload();
       }, 1000);
     } catch (err: any) {
@@ -241,7 +241,7 @@ export const Pay: React.FC = () => {
           </div>
           <h2 className="pay-card-title">支付成功！</h2>
           <p className="pay-success-desc">恭喜你成为语气魔方会员，所有功能已解锁</p>
-          <button onClick={() => navigate('/')} className="pay-start-btn">
+          <button onClick={() => navigate('/convert')} className="pay-start-btn">
             开始使用
           </button>
         </div>

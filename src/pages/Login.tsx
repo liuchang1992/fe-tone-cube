@@ -19,7 +19,7 @@ export const Login: React.FC = () => {
     try {
       const result = await login({ username, password });
       setUser({ username: result.username, isLoggedIn: true });
-      navigate('/');
+      navigate('/convert');
     } catch (err: any) {
       setError(err.message || '登录失败，请稍后重试');
     } finally {

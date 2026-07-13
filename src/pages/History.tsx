@@ -6,6 +6,7 @@ import {
   CheckOutlined,
   CopyOutlined,
   DeleteOutlined,
+  DownloadOutlined,
   DownOutlined,
   FileTextOutlined,
   UpOutlined,
@@ -115,6 +116,22 @@ export const History: React.FC = () => {
     }
   };
 
+  const downloadResult = (item: HistoryItem) => {
+    trackFeature('history_download');
+    const sourceName = item.file_name?.replace(/\.[^.]+$/, '') || `文档转换-${item.id}`;
+    const safeName = sourceName.replace(/[\\/:*?"<>|]/g, '-');
+    const blob = new Blob([item.output_text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${safeName}-转换结果.txt`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    message.success('转换结果已下载');
+  };
+
   const formatDate = (dateStr: string) => {
     return formatBackendDateTime(dateStr);
   };
@@ -138,7 +155,7 @@ export const History: React.FC = () => {
     <div className="history-page">
       <main className="history-wrapper">
         <div className="history-header">
-          <button className="page-navigation" onClick={() => navigate('/')}>
+          <button className="page-navigation" onClick={() => navigate('/convert')}>
             <ArrowLeftOutlined className="back-icon" />
             <span>历史记录</span>
           </button>
@@ -168,8 +185,8 @@ export const History: React.FC = () => {
           <section className="history-empty">
             <FileTextOutlined className="history-empty-icon" />
             <h2>还没有转换记录</h2>
-            <p>去首页完成一次转换，记录会自动保存在这里。</p>
-            <button onClick={() => navigate('/')} className="go-home-btn">
+            <p>去转换页完成一次转换，记录会自动保存在这里。</p>
+            <button onClick={() => navigate('/convert')} className="go-home-btn">
               去转换
             </button>
           </section>
@@ -187,7 +204,15 @@ export const History: React.FC = () => {
                           <span className="history-time">
                             {formatDate(item.created_at)}
                           </span>
+                          <span className={`history-type-badge history-type-badge--${item.conversion_type}`}>
+                            {item.conversion_type === 'document' ? '文档' : '文案'}
+                          </span>
                           <span className="style-badge">{item.style}</span>
+                          {item.file_name && (
+                            <span className="history-file-name" title={item.file_name}>
+                              <FileTextOutlined /> {item.file_name}
+                            </span>
+                          )}
                         </div>
                         <p className="history-preview">{item.output_text}</p>
                       </div>
@@ -206,6 +231,12 @@ export const History: React.FC = () => {
                             {copiedId === item.id ? <CheckOutlined /> : <CopyOutlined />}
                             {copiedId === item.id ? '已复制' : '复制结果'}
                           </button>
+                          {item.conversion_type === 'document' && (
+                            <button onClick={() => downloadResult(item)} className="download-btn">
+                              <DownloadOutlined />
+                              下载结果
+                            </button>
+                          )}
                           <button onClick={() => deleteHistory(item)} className="delete-btn">
                             <DeleteOutlined />
                             删除
@@ -214,11 +245,11 @@ export const History: React.FC = () => {
 
                         <div className="history-text-grid">
                           <div className="text-block source-block">
-                            <h3>原文</h3>
+                            <h3>{item.conversion_type === 'document' ? '文档原文' : '原文'}</h3>
                             <p>{item.input_text}</p>
                           </div>
                           <div className="text-block result-block">
-                            <h3>转换结果</h3>
+                            <h3>完整转换结果</h3>
                             <p>{item.output_text}</p>
                           </div>
                         </div>

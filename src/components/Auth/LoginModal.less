@@ -132,6 +132,43 @@
   }
 }
 
+.auth-field--error {
+  .auth-input-wrap {
+    color: #dc2626;
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
+  }
+
+  .auth-input-wrap:focus-within {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+  }
+}
+
+.auth-field-error {
+  margin-top: -2px;
+  color: #dc2626 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.35;
+}
+
+.auth-agreement-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 2px 0;
+  border-radius: 8px;
+  outline: none;
+}
+
+.auth-agreement-field--error {
+  .ant-checkbox-inner {
+    border-color: #ef4444;
+  }
+}
+
 .auth-policy,
 .auth-agreement {
   color: #6b7280;

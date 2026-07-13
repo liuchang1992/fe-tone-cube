@@ -13,9 +13,11 @@ import { InputArea } from '@/components/InputArea/InputArea';
 import { Layout } from '@/components/Layout/Layout';
 import { OutputArea } from '@/components/OutputArea/OutputArea';
 import { QuotaAlert } from '@/components/Quota/QuotaAlert';
+import { SEOManager } from '@/components/SEO/SEOManager';
 import { StyleSelector } from '@/components/StyleSelector/StyleSelector';
 import { Corpus } from '@/pages/Corpus';
 import { History } from '@/pages/History';
+import { Landing } from '@/pages/Landing';
 import { Login } from '@/pages/Login';
 import { Pay } from '@/pages/Pay';
 import { Privacy } from '@/pages/Privacy';
@@ -166,33 +168,6 @@ function MobileDeviceGuide() {
 }
 
 function App() {
-  const {
-    setShowLoginModal,
-    setShowQuotaAlert,
-    setShowRegisterModal,
-    showLoginModal,
-    showQuotaAlert,
-    showRegisterModal,
-  } = useAppStore();
-  const isMobileDevice = useIsMobileDevice();
-
-  if (isMobileDevice) {
-    return (
-      <ConfigProvider
-        locale={zhCN}
-        theme={{
-          token: {
-            colorPrimary: '#7c3aed',
-            borderRadius: 12,
-            fontFamily: 'inherit',
-          },
-        }}
-      >
-        <MobileDeviceGuide />
-      </ConfigProvider>
-    );
-  }
-
   return (
     <ConfigProvider
       locale={zhCN}
@@ -214,11 +189,38 @@ function App() {
       }}
     >
       <BrowserRouter>
-        <AnalyticsTracker />
+        <AppContent />
+      </BrowserRouter>
+    </ConfigProvider>
+  );
+}
+
+function AppContent() {
+  const {
+    setShowLoginModal,
+    setShowQuotaAlert,
+    setShowRegisterModal,
+    showLoginModal,
+    showQuotaAlert,
+    showRegisterModal,
+  } = useAppStore();
+  const isMobileDevice = useIsMobileDevice();
+  const location = useLocation();
+  const isMobileFriendlyPage = location.pathname === '/' || location.pathname === '/privacy';
+
+  return (
+    <>
+      <AnalyticsTracker />
+      <SEOManager />
+      {isMobileDevice && !isMobileFriendlyPage ? (
+        <MobileDeviceGuide />
+      ) : (
+        <>
         <RouteChangeReset />
         <Routes>
           <Route path="/" element={<Layout />}>
-            <Route path="/" element={<HomePage />} />
+            <Route index element={<Landing />} />
+            <Route path="convert" element={<HomePage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/pay" element={<Pay />} />
@@ -253,8 +255,9 @@ function App() {
             setShowLoginModal(true);
           }}
         />
-      </BrowserRouter>
-    </ConfigProvider>
+        </>
+      )}
+    </>
   );
 }
 

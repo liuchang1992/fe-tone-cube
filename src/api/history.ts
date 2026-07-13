@@ -6,6 +6,8 @@ export interface HistoryItem {
   input_text: string;
   output_text: string;
   style: string;
+  conversion_type: 'text' | 'document';
+  file_name: string | null;
   created_at: string;
 }
 

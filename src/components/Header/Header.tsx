@@ -4,6 +4,8 @@ import { message } from 'antd';
 import {
   BookOutlined,
   ClockCircleOutlined,
+  HomeOutlined,
+  SwapOutlined,
 } from '@ant-design/icons';
 
 import { logout } from '@/api/auth';
@@ -20,6 +22,7 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { fetchQuota, logout: storeLogout, remainingQuota, user } = useAppStore();
+  const isLandingPage = location.pathname === '/';
 
   const handleLogout = () => {
     trackFeature('logout');
@@ -52,8 +55,22 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
         </span>
         <span className="title">语气魔方</span>
       </button>
-      {
-        user.isLoggedIn ? (<nav className="operate-context" aria-label="主导航">
+      {!isLandingPage && <nav className="operate-context" aria-label="主导航">
+        <button
+          className={`operate-item ${isActive('/') ? 'active' : ''}`}
+          onClick={() => navigate('/')}
+        >
+          <HomeOutlined />
+          <span>首页</span>
+        </button>
+        <button
+          className={`operate-item ${isActive('/convert') ? 'active' : ''}`}
+          onClick={() => navigate('/convert')}
+        >
+          <SwapOutlined />
+          <span>开始转换</span>
+        </button>
+        {user.isLoggedIn ? <>
         <button
           className={`operate-item ${isActive('/history') ? 'active' : ''}`}
           onClick={() => goProtected('/history')}
@@ -75,22 +92,32 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
           <RocketOutlined />
           <span>升级会员</span>
         </button> */}
-      </nav>) : null 
-      }
-      <div className="login-context">
-        <div className="count-section">
-          <span>剩余次数：</span>
-          <strong>{remainingQuota < 0 ? '∞' : remainingQuota}</strong>
+        </> : null}
+      </nav>}
+      {isLandingPage ? (
+        <button
+          type="button"
+          className="landing-header-cta"
+          onClick={() => {
+            trackFeature('landing_start_convert');
+            navigate('/convert');
+          }}
+        >
+          开始使用
+        </button>
+      ) : (
+        <div className="login-context">
+          <div className="count-section">
+            <span>剩余次数：</span>
+            <strong>{remainingQuota < 0 ? '∞' : remainingQuota}</strong>
+          </div>
+          {user.isLoggedIn ? (
+            <button onClick={handleLogout} className="login-btn">退出</button>
+          ) : (
+            <button onClick={onLoginClick} className="login-btn">登录</button>
+          )}
         </div>
-        {/* <span className="user-avatar" aria-hidden="true">
-          <UserOutlined />
-        </span> */}
-        {user.isLoggedIn ? (
-          <button onClick={handleLogout} className="login-btn">退出</button>
-        ) : (
-          <button onClick={onLoginClick} className="login-btn">登录</button>
-        )}
-      </div>
+      )}
     </header>
   );
 };

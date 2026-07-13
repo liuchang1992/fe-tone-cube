@@ -8,6 +8,7 @@ export type AnalyticsFeature =
   | 'document_result_copy'
   | 'document_result_download'
   | 'history_copy'
+  | 'history_download'
   | 'history_delete'
   | 'history_clear'
   | 'corpus_text_analyze'
@@ -19,7 +20,9 @@ export type AnalyticsFeature =
   | 'logout'
   | 'pay_order_create'
   | 'feedback_open'
-  | 'feedback_submit';
+  | 'feedback_submit'
+  | 'landing_start_convert'
+  | 'landing_view_capabilities';
 
 const analyticsEnabled = import.meta.env.VITE_ANALYTICS_ENABLED !== 'false';
 

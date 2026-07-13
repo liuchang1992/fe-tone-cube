@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Checkbox, message } from 'antd';
 import { CloseOutlined, LockOutlined, UserAddOutlined, UserOutlined } from '@ant-design/icons';
 
@@ -12,22 +12,35 @@ interface RegisterModalProps {
   onSwitchToLogin: () => void;
 }
 
+interface RegisterFieldErrors {
+  username?: string;
+  password?: string;
+  confirmPassword?: string;
+  agreed?: string;
+}
+
 export const RegisterModal: React.FC<RegisterModalProps> = ({
   isOpen,
   onClose,
   onSwitchToLogin,
 }) => {
+  const usernameInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
+  const agreementRef = useRef<HTMLDivElement>(null);
   const [agreed, setAgreed] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({});
 
   if (!isOpen) return null;
 
   const resetForm = () => {
     setAgreed(false);
     setConfirmPassword('');
+    setFieldErrors({});
     setPassword('');
     setUsername('');
   };
@@ -39,23 +52,37 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    const normalizedUsername = username.trim();
+    const nextErrors: RegisterFieldErrors = {};
 
-    if (!agreed) {
-      message.warning('请先阅读并同意隐私政策');
-      return;
+    if (!normalizedUsername) nextErrors.username = '请输入用户名';
+    else if (normalizedUsername.length < 3 || normalizedUsername.length > 32) {
+      nextErrors.username = '用户名长度应为 3～32 位';
+    } else if (!/^[A-Za-z0-9_@.-]+$/.test(normalizedUsername)) {
+      nextErrors.username = '用户名仅支持字母、数字及 _ @ . -';
     }
-    if (password !== confirmPassword) {
-      message.warning('两次输入的密码不一致');
-      return;
-    }
-    if (password.length < 8) {
-      message.warning('密码长度至少 8 位');
+
+    if (!password) nextErrors.password = '请输入密码';
+    else if (password.length < 8) nextErrors.password = '密码至少需要 8 位';
+    else if (password.length > 128) nextErrors.password = '密码最多支持 128 位';
+
+    if (!confirmPassword) nextErrors.confirmPassword = '请再次输入密码';
+    else if (password !== confirmPassword) nextErrors.confirmPassword = '两次输入的密码不一致';
+
+    if (!agreed) nextErrors.agreed = '请先阅读并同意隐私政策';
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      if (nextErrors.username) usernameInputRef.current?.focus();
+      else if (nextErrors.password) passwordInputRef.current?.focus();
+      else if (nextErrors.confirmPassword) confirmPasswordInputRef.current?.focus();
+      else agreementRef.current?.focus();
       return;
     }
 
     setIsLoading(true);
     try {
-      await register({ username, password });
+      await register({ username: normalizedUsername, password });
       trackFeature('register_success');
       message.success('注册成功，请登录');
       resetForm();
@@ -85,58 +112,114 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <label className="auth-field">
+        <form onSubmit={handleSubmit} className="auth-form" noValidate>
+          <label className={`auth-field ${fieldErrors.username ? 'auth-field--error' : ''}`}>
             <span>用户名</span>
             <div className="auth-input-wrap">
               <UserOutlined />
               <input
+                ref={usernameInputRef}
                 type="text"
                 value={username}
-                onChange={(event) => setUsername(event.target.value)}
+                onChange={(event) => {
+                  setUsername(event.target.value);
+                  if (fieldErrors.username) {
+                    setFieldErrors((current) => ({ ...current, username: undefined }));
+                  }
+                }}
                 placeholder="3-32 位用户名"
                 autoComplete="username"
-                required
+                aria-invalid={Boolean(fieldErrors.username)}
+                aria-describedby={fieldErrors.username ? 'register-username-error' : undefined}
               />
             </div>
+            {fieldErrors.username && (
+              <span className="auth-field-error" id="register-username-error" role="alert">
+                {fieldErrors.username}
+              </span>
+            )}
           </label>
 
-          <label className="auth-field">
+          <label className={`auth-field ${fieldErrors.password ? 'auth-field--error' : ''}`}>
             <span>密码</span>
             <div className="auth-input-wrap">
               <LockOutlined />
               <input
+                ref={passwordInputRef}
                 type="password"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  if (fieldErrors.password) {
+                    setFieldErrors((current) => ({ ...current, password: undefined }));
+                  }
+                  if (fieldErrors.confirmPassword) {
+                    setFieldErrors((current) => ({ ...current, confirmPassword: undefined }));
+                  }
+                }}
                 placeholder="至少 8 位"
                 autoComplete="new-password"
-                required
+                aria-invalid={Boolean(fieldErrors.password)}
+                aria-describedby={fieldErrors.password ? 'register-password-error' : undefined}
               />
             </div>
+            {fieldErrors.password && (
+              <span className="auth-field-error" id="register-password-error" role="alert">
+                {fieldErrors.password}
+              </span>
+            )}
           </label>
 
-          <label className="auth-field">
+          <label className={`auth-field ${fieldErrors.confirmPassword ? 'auth-field--error' : ''}`}>
             <span>确认密码</span>
             <div className="auth-input-wrap">
               <UserAddOutlined />
               <input
+                ref={confirmPasswordInputRef}
                 type="password"
                 value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
+                onChange={(event) => {
+                  setConfirmPassword(event.target.value);
+                  if (fieldErrors.confirmPassword) {
+                    setFieldErrors((current) => ({ ...current, confirmPassword: undefined }));
+                  }
+                }}
                 placeholder="再次输入密码"
                 autoComplete="new-password"
-                required
+                aria-invalid={Boolean(fieldErrors.confirmPassword)}
+                aria-describedby={fieldErrors.confirmPassword ? 'register-confirm-password-error' : undefined}
               />
             </div>
+            {fieldErrors.confirmPassword && (
+              <span className="auth-field-error" id="register-confirm-password-error" role="alert">
+                {fieldErrors.confirmPassword}
+              </span>
+            )}
           </label>
 
-          <Checkbox checked={agreed} onChange={(event) => setAgreed(event.target.checked)}>
-            <span className="auth-agreement">
-              我已阅读并同意
-              <a href="/privacy" target="_blank" rel="noreferrer">《隐私政策》</a>
-            </span>
-          </Checkbox>
+          <div
+            ref={agreementRef}
+            tabIndex={-1}
+            className={`auth-agreement-field ${fieldErrors.agreed ? 'auth-agreement-field--error' : ''}`}
+          >
+            <Checkbox
+              checked={agreed}
+              onChange={(event) => {
+                setAgreed(event.target.checked);
+                if (event.target.checked && fieldErrors.agreed) {
+                  setFieldErrors((current) => ({ ...current, agreed: undefined }));
+                }
+              }}
+            >
+              <span className="auth-agreement">
+                我已阅读并同意
+                <a href="/privacy" target="_blank" rel="noreferrer">《隐私政策》</a>
+              </span>
+            </Checkbox>
+            {fieldErrors.agreed && (
+              <span className="auth-field-error" role="alert">{fieldErrors.agreed}</span>
+            )}
+          </div>
 
           <button type="submit" disabled={isLoading} className="auth-submit">
             {isLoading ? '注册中...' : '注册'}
@@ -145,7 +228,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
 
         <p className="auth-footer">
           已有账号？
-          <button onClick={onSwitchToLogin}>去登录</button>
+          <button onClick={() => { resetForm(); onSwitchToLogin(); }}>去登录</button>
         </p>
       </div>
     </div>

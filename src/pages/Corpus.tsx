@@ -333,7 +333,7 @@ export const Corpus: React.FC = () => {
   return (
     <div className="library-page">
       <main className="library-wrapper">
-        <button className="page-navigation" onClick={() => navigate('/')}>
+        <button className="page-navigation" onClick={() => navigate('/convert')}>
           <ArrowLeftOutlined className="back-icon" />
           <span>语料库</span>
         </button>

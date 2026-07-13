@@ -1,5 +1,19 @@
 # React + TypeScript + Vite
 
+## 生产环境与 SEO
+
+复制 `.env.production.example` 为 `.env.production`，并设置真实的前端域名和 API 地址：
+
+```env
+VITE_SITE_URL=https://www.your-domain.com
+VITE_API_BASE_URL=https://api.your-domain.com
+VITE_ANALYTICS_ENABLED=true
+```
+
+`VITE_SITE_URL` 用于生成 canonical、Open Graph URL、`robots.txt` 和 `sitemap.xml`。
+必须填写前端网站地址，不要填写后端 API 地址。执行 `npm run build` 后，SEO 文件会输出到
+`dist/`；未配置正式域名时仍会生成 `robots.txt`，但不会生成可能包含错误域名的 sitemap。
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

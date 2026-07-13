@@ -1,10 +1,11 @@
 import { useState, type FC } from 'react';
-import { Button, Input, Modal, Select, message } from 'antd';
+import { Button, Image, Input, Modal, Select, message } from 'antd';
 import { CheckCircleFilled, MessageOutlined } from '@ant-design/icons';
 import { useLocation } from 'react-router-dom';
 
 import { trackFeature } from '@/api/analytics';
 import { submitFeedback, type FeedbackCategory } from '@/api/feedback';
+import contactWechatQr from '@/assets/contact-wechat-qr.png';
 import './FeedbackWidget.less';
 
 
@@ -137,7 +138,7 @@ export const FeedbackWidget: FC = () => {
               <Input
                 value={contact}
                 onChange={(event) => setContact(event.target.value)}
-                placeholder="微信、邮箱或手机号，方便我们回复你"
+                placeholder="微信、邮箱或手机号，我们将在3个工作日内回复你"
                 maxLength={200}
               />
             </label>
@@ -147,6 +148,21 @@ export const FeedbackWidget: FC = () => {
             </p>
           </div>
         )}
+
+        <div className="feedback-direct-contact">
+          <Image
+            src={contactWechatQr}
+            alt="语气魔方微信二维码"
+            width={104}
+            preview={{ mask: '点击放大' }}
+            className="feedback-contact-qr"
+          />
+          <div>
+            <strong>想直接和我沟通？</strong>
+            <p>扫码添加微信，产品问题、使用建议都可以直接找我。</p>
+            <span>手机端可点击放大后长按识别</span>
+          </div>
+        </div>
       </Modal>
     </>
   );
