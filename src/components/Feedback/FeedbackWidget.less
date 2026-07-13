@@ -138,6 +138,10 @@
 }
 
 @media (max-width: 520px) {
+  body:has(.mobile-bottom-nav) .feedback-trigger {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+
   .feedback-direct-contact {
     align-items: flex-start;
     gap: 12px;

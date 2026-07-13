@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeftOutlined,
   FileTextOutlined,
   InboxOutlined,
 } from '@ant-design/icons';
-import { Modal, Pagination, message } from 'antd';
+import { Modal, Pagination, Select, message } from 'antd';
 
 import {
   type CorpusItem,
@@ -16,6 +15,7 @@ import {
   uploadCorpusText,
 } from '@/api/corpus';
 import { trackFeature } from '@/api/analytics';
+import { PageHeader } from '@/components/PageHeader/PageHeader';
 import { useAppStore } from '@/store/appStore';
 import { formatBackendDateTime } from '@/utils/dateTime';
 import './Corpus.less';
@@ -52,6 +52,7 @@ export const Corpus: React.FC = () => {
   const [filterScene, setFilterScene] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [pageSize, setPageSize] = useState(10);
+  const [reportItem, setReportItem] = useState<CorpusItem | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedScene, setSelectedScene] = useState('all');
   const [textContent, setTextContent] = useState('');
@@ -219,15 +220,7 @@ export const Corpus: React.FC = () => {
 
   const handleViewReport = (item: CorpusItem) => {
     trackFeature('corpus_report_view');
-    Modal.info({
-      title: item.file_name,
-      content: (
-        <div className="report-content">
-          {item.style_summary || '暂无分析报告'}
-        </div>
-      ),
-      okText: '知道了',
-    });
+    setReportItem(item);
   };
 
   const clearSelectedFile = () => {
@@ -333,10 +326,7 @@ export const Corpus: React.FC = () => {
   return (
     <div className="library-page">
       <main className="library-wrapper">
-        <button className="page-navigation" onClick={() => navigate('/convert')}>
-          <ArrowLeftOutlined className="back-icon" />
-          <span>语料库</span>
-        </button>
+        <PageHeader title="语料库" onBack={() => navigate('/convert')} />
 
         <section className="upload-card">
           <h1>让魔方学习你的写作风格</h1>
@@ -351,17 +341,12 @@ export const Corpus: React.FC = () => {
           </p>
           <div className="scene-selector">
             <span>适用类型</span>
-            <select
+            <Select
               className="scene-select"
               value={selectedScene}
-              onChange={(event) => setSelectedScene(event.target.value)}
-            >
-              {SCENE_OPTIONS.map((scene) => (
-                <option key={scene.value} value={scene.value}>
-                  {scene.label}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedScene}
+              options={SCENE_OPTIONS}
+            />
           </div>
 
           <div className="upload-grid">
@@ -434,7 +419,10 @@ export const Corpus: React.FC = () => {
 
         <section className="records-section">
           <div className="records-header">
-            <h2>已上传语料分析记录</h2>
+            <h2>
+              语料记录
+              {!loading && <span className="records-count">{total}</span>}
+            </h2>
             <label className="filter-select-wrap">
               <span>筛选</span>
               <select
@@ -512,6 +500,33 @@ export const Corpus: React.FC = () => {
             </>
           )}
         </section>
+
+        <Modal
+          open={Boolean(reportItem)}
+          onCancel={() => setReportItem(null)}
+          onOk={() => setReportItem(null)}
+          className="corpus-report-modal"
+          width={600}
+          centered
+          title={reportItem?.file_name || ''}
+          okText="关闭"
+          cancelButtonProps={{ style: { display: 'none' } }}
+        >
+          {reportItem && (
+            <>
+              <div className="report-meta-row">
+                <span>{getSceneLabel(reportItem.scene)}</span>
+                <span>{formatBackendDateTime(reportItem.created_at)}</span>
+                <span className={getUsageBadgeClass(reportItem)}>
+                  {getUsageStatus(reportItem)}
+                </span>
+              </div>
+              <div className="report-content">
+                {reportItem.style_summary || '暂无分析报告'}
+              </div>
+            </>
+          )}
+        </Modal>
       </main>
     </div>
   );

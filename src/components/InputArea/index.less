@@ -10,11 +10,18 @@
   font-size: 14px;
   line-height: 1.58;
   resize: none;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   outline: none;
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
+
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 
   &::placeholder {
     color: #a6adba;

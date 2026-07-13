@@ -235,8 +235,35 @@
   color: #fff;
   font-size: 23px;
   background: #7c3aed;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
   box-shadow: 0 10px 24px rgba(124, 58, 237, 0.24);
+  cursor: pointer;
+  transition: background 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+
+  svg {
+    transition: transform 0.18s ease;
+  }
+
+  &:hover:not(:disabled) {
+    background: #6d28d9;
+    box-shadow: 0 13px 28px rgba(124, 58, 237, 0.32);
+
+    svg {
+      transform: translateX(2px);
+    }
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(167, 139, 250, 0.45);
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    opacity: 0.72;
+    cursor: not-allowed;
+  }
 }
 
 .loading-status {

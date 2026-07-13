@@ -108,7 +108,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
           </span> */}
           <div>
             <h2>创建账号</h2>
-            <p>保存你的转换记录，训练更贴近你的写作风格</p>
+            <p>保存转换记录，建立更贴近你的个人表达风格</p>
           </div>
         </div>
 

@@ -29,6 +29,11 @@ import './App.less';
 function HomePage() {
   const { convert, fetchQuota, isLoading, user } = useAppStore();
 
+  const handleTextConvert = () => {
+    trackFeature('text_convert');
+    void convert();
+  };
+
   useEffect(() => {
     fetchQuota();
   }, [fetchQuota]);
@@ -53,9 +58,16 @@ function HomePage() {
             <InputArea />
           </div>
 
-          <div className="transform-icon" aria-hidden="true">
-            <ArrowRightOutlined />
-          </div>
+          <button
+            type="button"
+            className="transform-icon"
+            onClick={handleTextConvert}
+            disabled={isLoading}
+            aria-label={isLoading ? '正在转换' : '转换文本'}
+            title={isLoading ? '正在转换' : '点击转换'}
+          >
+            {isLoading ? <span className="loading-spinner" /> : <ArrowRightOutlined />}
+          </button>
 
           <div className="agent-panel">
             <div className="container-title">
@@ -76,10 +88,7 @@ function HomePage() {
           <StyleSelector />
           <div className="transform-btn">
             <button
-              onClick={() => {
-                trackFeature('text_convert');
-                void convert();
-              }}
+              onClick={handleTextConvert}
               disabled={isLoading}
               className="btn"
             >
@@ -205,6 +214,7 @@ function AppContent() {
     showRegisterModal,
   } = useAppStore();
   const isMobileDevice = useIsMobileDevice();
+  const mobileGuideEnabled = import.meta.env.VITE_MOBILE_GUIDE_ENABLED === 'true';
   const location = useLocation();
   const isMobileFriendlyPage = location.pathname === '/' || location.pathname === '/privacy';
 
@@ -212,7 +222,7 @@ function AppContent() {
     <>
       <AnalyticsTracker />
       <SEOManager />
-      {isMobileDevice && !isMobileFriendlyPage ? (
+      {mobileGuideEnabled && isMobileDevice && !isMobileFriendlyPage ? (
         <MobileDeviceGuide />
       ) : (
         <>

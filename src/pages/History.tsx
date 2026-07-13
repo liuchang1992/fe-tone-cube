@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal, Pagination, message } from 'antd';
 import {
-  ArrowLeftOutlined,
   CheckOutlined,
   CopyOutlined,
   DeleteOutlined,
@@ -19,6 +18,7 @@ import {
   getHistoryList,
 } from '@/api/history';
 import { trackFeature } from '@/api/analytics';
+import { PageHeader } from '@/components/PageHeader/PageHeader';
 import { useAppStore } from '@/store/appStore';
 import { formatBackendDateTime } from '@/utils/dateTime';
 import './History.less';
@@ -154,18 +154,15 @@ export const History: React.FC = () => {
   return (
     <div className="history-page">
       <main className="history-wrapper">
-        <div className="history-header">
-          <button className="page-navigation" onClick={() => navigate('/convert')}>
-            <ArrowLeftOutlined className="back-icon" />
-            <span>历史记录</span>
-          </button>
-
-          {history.length > 0 && (
+        <PageHeader
+          title="历史记录"
+          onBack={() => navigate('/convert')}
+          action={history.length > 0 ? (
             <button onClick={clearAllHistoryList} className="clear-all-btn">
               清空所有
             </button>
-          )}
-        </div>
+          ) : undefined}
+        />
 
         {/* <section className="history-summary-card">
           <div>

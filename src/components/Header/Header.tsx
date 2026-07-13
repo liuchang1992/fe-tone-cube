@@ -16,9 +16,10 @@ import './index.less';
 interface HeaderProps {
   onLoginClick: () => void;
   onRegisterClick: () => void;
+  showMobileNavigation?: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
+export const Header: React.FC<HeaderProps> = ({ onLoginClick, showMobileNavigation = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { fetchQuota, logout: storeLogout, remainingQuota, user } = useAppStore();
@@ -48,6 +49,7 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
+    <>
     <header className="header">
       <button className="logo-context" onClick={() => navigate('/')} aria-label="返回首页">
         <span className="logo">
@@ -119,5 +121,34 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
         </div>
       )}
     </header>
+    {showMobileNavigation && (
+      <nav className="mobile-bottom-nav" aria-label="移动端主导航">
+        <button
+          type="button"
+          className={`mobile-nav-item ${isActive('/convert') ? 'active' : ''}`}
+          onClick={() => navigate('/convert')}
+        >
+          <SwapOutlined />
+          <span>转换</span>
+        </button>
+        <button
+          type="button"
+          className={`mobile-nav-item ${isActive('/history') ? 'active' : ''}`}
+          onClick={() => goProtected('/history')}
+        >
+          <ClockCircleOutlined />
+          <span>历史</span>
+        </button>
+        <button
+          type="button"
+          className={`mobile-nav-item ${isActive('/corpus') ? 'active' : ''}`}
+          onClick={() => goProtected('/corpus')}
+        >
+          <BookOutlined />
+          <span>语料库</span>
+        </button>
+      </nav>
+    )}
+    </>
   );
 };

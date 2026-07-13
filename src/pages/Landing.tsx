@@ -83,7 +83,7 @@ export const Landing: FC = () => {
             </button>
           </div>
           <div className="landing-trust-points" aria-label="产品特点">
-            <span><CheckCircleFilled /> 无需安装</span>
+            <span><CheckCircleFilled /> 文案不用于模型训练</span>
             <span><CheckCircleFilled /> 支持长文档</span>
             <span><CheckCircleFilled /> 内容安全检测</span>
           </div>

@@ -139,18 +139,6 @@ export const DocumentConvertButton: React.FC = () => {
               ? `文档转换中 ${documentTaskProgress}%`
               : '上传文档转换'}
         </button>
-        {documentTaskResult && !isDocumentLoading && (
-          <button
-            type="button"
-            className="document-convert-btn"
-            onClick={() => {
-              trackFeature('document_result_open');
-              setDocumentPreviewOpen(true);
-            }}
-          >
-            最近结果
-          </button>
-        )}
         <span
           className="document-convert-hint"
           tabIndex={0}
