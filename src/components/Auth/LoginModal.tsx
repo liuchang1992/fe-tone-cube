@@ -3,6 +3,7 @@ import { CloseOutlined, LockOutlined, UserOutlined } from '@ant-design/icons';
 import { message } from 'antd';
 
 import { login } from '@/api/auth';
+import { trackFeature } from '@/api/analytics';
 import { useAppStore } from '@/store/appStore';
 import './LoginModal.less';
 
@@ -40,6 +41,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
     try {
       const result = await login({ username, password });
+      trackFeature('login_success');
       setUser({ username: result.username, isLoggedIn: true });
       await fetchQuota();
       handleClose();

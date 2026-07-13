@@ -5,8 +5,10 @@ import zhCN from 'antd/locale/zh_CN';
 import { ArrowRightOutlined } from '@ant-design/icons';
 
 import { LoginModal } from '@/components/Auth/LoginModal';
+import { AnalyticsTracker } from '@/components/Analytics/AnalyticsTracker';
 import { RegisterModal } from '@/components/Auth/RegisterModal';
 import { DocumentConvertButton } from '@/components/DocumentConvert/DocumentConvertButton';
+import { FeedbackWidget } from '@/components/Feedback/FeedbackWidget';
 import { InputArea } from '@/components/InputArea/InputArea';
 import { Layout } from '@/components/Layout/Layout';
 import { OutputArea } from '@/components/OutputArea/OutputArea';
@@ -19,6 +21,7 @@ import { Pay } from '@/pages/Pay';
 import { Privacy } from '@/pages/Privacy';
 import { Register } from '@/pages/Register';
 import { useAppStore } from '@/store/appStore';
+import { trackFeature } from '@/api/analytics';
 import './App.less';
 
 function HomePage() {
@@ -70,7 +73,14 @@ function HomePage() {
           <p className="quick-title">使用场景</p>
           <StyleSelector />
           <div className="transform-btn">
-            <button onClick={convert} disabled={isLoading} className="btn">
+            <button
+              onClick={() => {
+                trackFeature('text_convert');
+                void convert();
+              }}
+              disabled={isLoading}
+              className="btn"
+            >
               {isLoading ? (
                 <>
                   <span className="loading-spinner" />
@@ -204,6 +214,7 @@ function App() {
       }}
     >
       <BrowserRouter>
+        <AnalyticsTracker />
         <RouteChangeReset />
         <Routes>
           <Route path="/" element={<Layout />}>
@@ -216,6 +227,7 @@ function App() {
             <Route path="/privacy" element={<Privacy />} />
           </Route>
         </Routes>
+        <FeedbackWidget />
 
         <LoginModal
           isOpen={showLoginModal}

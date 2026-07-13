@@ -17,7 +17,9 @@ import {
   deleteHistoryItem,
   getHistoryList,
 } from '@/api/history';
+import { trackFeature } from '@/api/analytics';
 import { useAppStore } from '@/store/appStore';
+import { formatBackendDateTime } from '@/utils/dateTime';
 import './History.less';
 
 export const History: React.FC = () => {
@@ -66,6 +68,7 @@ export const History: React.FC = () => {
       cancelText: '取消',
       okButtonProps: { danger: true },
       onOk: async () => {
+        trackFeature('history_delete');
         try {
           await deleteHistoryItem(item.id);
           message.success('删除成功');
@@ -85,6 +88,7 @@ export const History: React.FC = () => {
       cancelText: '取消',
       okButtonProps: { danger: true },
       onOk: async () => {
+        trackFeature('history_clear');
         try {
           await clearAllHistory();
           message.success('已清空所有历史记录');
@@ -100,6 +104,7 @@ export const History: React.FC = () => {
   };
 
   const copyText = async (text: string, id: number) => {
+    trackFeature('history_copy');
     try {
       await navigator.clipboard.writeText(text);
       setCopiedId(id);
@@ -111,16 +116,7 @@ export const History: React.FC = () => {
   };
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    if (Number.isNaN(date.getTime())) return dateStr;
-    return date.toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
+    return formatBackendDateTime(dateStr);
   };
 
   const onPageChange = (page: number, size?: number) => {

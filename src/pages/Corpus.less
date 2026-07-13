@@ -45,10 +45,35 @@
 }
 
 .upload-subtitle {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   margin: 0 0 24px;
   color: #6b7280;
   font-size: 14px;
   line-height: 1.5;
+}
+
+.corpus-quota-hint {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 9px;
+  color: #6d28d9;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.4;
+  white-space: nowrap;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  border-radius: 999px;
+}
+
+.corpus-quota-hint--empty {
+  color: #b45309;
+  background: #fffbeb;
+  border-color: #fde68a;
 }
 
 .scene-selector {

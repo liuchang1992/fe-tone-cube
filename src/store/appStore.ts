@@ -144,6 +144,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       await get().fetchQuota();
     } catch (err: unknown) {
       const errorMsg = getErrorMessage(err, '转换失败，请稍后重试');
+      if (errorMsg.includes('内容安全检测')) {
+        set({ error: errorMsg, isLoading: false });
+        message.warning(errorMsg);
+        return;
+      }
       // 检查是否是次数用尽的错误
       if (errorMsg.includes('次数已用完') || errorMsg.includes('免费次数')) {
         set({ error: errorMsg, isLoading: false });
@@ -190,6 +195,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     } catch (err: unknown) {
       const errorMsg = getErrorMessage(err, '文档转换失败，请稍后重试');
       localStorage.removeItem(ACTIVE_DOCUMENT_TASK_KEY);
+      if (errorMsg.includes('内容安全检测')) {
+        set({ error: errorMsg, isDocumentLoading: false, documentTaskMessage: errorMsg });
+        message.warning(errorMsg);
+        await get().fetchQuota();
+        return null;
+      }
       if (errorMsg.includes('次数已用完') || errorMsg.includes('免费次数')) {
         set({ error: errorMsg, isDocumentLoading: false, documentTaskMessage: errorMsg });
         const user = get().user;

@@ -3,6 +3,7 @@ import { Checkbox, message } from 'antd';
 import { CloseOutlined, LockOutlined, UserAddOutlined, UserOutlined } from '@ant-design/icons';
 
 import { register } from '@/api/auth';
+import { trackFeature } from '@/api/analytics';
 import './RegisterModal.less';
 
 interface RegisterModalProps {
@@ -55,6 +56,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
     setIsLoading(true);
     try {
       await register({ username, password });
+      trackFeature('register_success');
       message.success('注册成功，请登录');
       resetForm();
       onClose();

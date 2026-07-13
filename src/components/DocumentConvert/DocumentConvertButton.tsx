@@ -3,6 +3,7 @@ import { Modal, message } from 'antd';
 import { FileTextOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
 import { useAppStore } from '@/store/appStore';
+import { trackFeature } from '@/api/analytics';
 
 const MAX_DOCUMENT_FILE_BYTES = 2_000_000;
 
@@ -35,7 +36,7 @@ export const DocumentConvertButton: React.FC = () => {
     ? documentTaskMessage || '文档正在后台转换，可继续使用普通文案转换'
     : isDocumentQuotaExhausted
       ? '文档转换次数已用完，请明天再试或联系管理员增加次数'
-      : '文档转换每日限用 1 次；文档内容最多 8000 个字符，文件最大 2 MB';
+      : '文档转换每日限用 1 次；文档内容最多 15000 个字符，文件最大 2 MB';
 
   useEffect(() => {
     void resumeDocumentConversion();
@@ -57,6 +58,7 @@ export const DocumentConvertButton: React.FC = () => {
     }
 
     setDownloadFormat(file.name.toLowerCase().endsWith('.docx') ? 'docx' : 'txt');
+    trackFeature('document_convert');
     await convertDocument(file);
   };
 
@@ -74,6 +76,7 @@ export const DocumentConvertButton: React.FC = () => {
 
   const copyResult = async () => {
     if (!documentOutputText) return;
+    trackFeature('document_result_copy');
     try {
       await navigator.clipboard.writeText(documentOutputText);
       message.success('复制成功');
@@ -102,6 +105,7 @@ export const DocumentConvertButton: React.FC = () => {
   };
 
   const downloadConvertedFile = () => {
+    trackFeature('document_result_download');
     if (downloadFormat === 'docx' && docxBase64) {
       downloadDocx();
       return;
@@ -139,7 +143,10 @@ export const DocumentConvertButton: React.FC = () => {
           <button
             type="button"
             className="document-convert-btn"
-            onClick={() => setDocumentPreviewOpen(true)}
+            onClick={() => {
+              trackFeature('document_result_open');
+              setDocumentPreviewOpen(true);
+            }}
           >
             最近结果
           </button>

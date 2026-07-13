@@ -4,11 +4,10 @@ import { message } from 'antd';
 import {
   BookOutlined,
   ClockCircleOutlined,
-  RocketOutlined,
-  UserOutlined,
 } from '@ant-design/icons';
 
 import { logout } from '@/api/auth';
+import { trackFeature } from '@/api/analytics';
 import { useAppStore } from '@/store/appStore';
 import './index.less';
 
@@ -23,6 +22,7 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
   const { fetchQuota, logout: storeLogout, remainingQuota, user } = useAppStore();
 
   const handleLogout = () => {
+    trackFeature('logout');
     logout();
     storeLogout();
     fetchQuota();

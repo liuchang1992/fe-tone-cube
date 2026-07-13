@@ -10,9 +10,23 @@ export interface CorpusItem {
   is_active?: boolean;
 }
 
+export interface CorpusUploadResponse {
+  message: string;
+  style_summary: string;
+  scene: string;
+  replaced: boolean;
+  remaining: number;
+}
+
+export interface CorpusQuotaResponse {
+  remaining: number;
+  daily_limit: number;
+  reset_at: string;
+}
+
 // 上传文本语料
 export const uploadCorpusText = async (content: string, file_name: string, scene: string = 'all') => {
-  return apiClient.post('/api/corpus/upload-text', { content, file_name, scene });
+  return apiClient.post<CorpusUploadResponse>('/api/corpus/upload-text', { content, file_name, scene });
 };
 
 // 上传文件语料
@@ -20,9 +34,14 @@ export const uploadCorpusFile = async (file: File, scene: string = 'all') => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('scene', scene);
-  return apiClient.post('/api/corpus/upload', formData, {
+  return apiClient.post<CorpusUploadResponse>('/api/corpus/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+};
+
+export const getCorpusQuota = async (): Promise<CorpusQuotaResponse> => {
+  const response = await apiClient.get<CorpusQuotaResponse>('/api/corpus/quota');
+  return response.data;
 };
 
 export interface CorpusListResponse {

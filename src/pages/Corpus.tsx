@@ -10,14 +10,18 @@ import { Modal, Pagination, message } from 'antd';
 import {
   type CorpusItem,
   deleteCorpusItem,
+  getCorpusQuota,
   getCorpusList,
   uploadCorpusFile,
   uploadCorpusText,
 } from '@/api/corpus';
+import { trackFeature } from '@/api/analytics';
 import { useAppStore } from '@/store/appStore';
+import { formatBackendDateTime } from '@/utils/dateTime';
 import './Corpus.less';
 
 const MIN_TEXT_LENGTH = 50;
+const MAX_TEXT_LENGTH = 15000;
 
 const SCENE_OPTIONS = [
   { value: 'all', label: '全部场景' },
@@ -37,11 +41,14 @@ const SCENE_OPTIONS = [
 export const Corpus: React.FC = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const switchConfirmOpenRef = useRef(false);
   const { user } = useAppStore();
 
   const [activeMode, setActiveMode] = useState<'text' | 'file'>('text');
   const [corpusList, setCorpusList] = useState<CorpusItem[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [corpusDailyLimit, setCorpusDailyLimit] = useState(3);
+  const [corpusRemaining, setCorpusRemaining] = useState<number | null>(null);
   const [filterScene, setFilterScene] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [pageSize, setPageSize] = useState(10);
@@ -62,6 +69,20 @@ export const Corpus: React.FC = () => {
       fetchCorpusList(currentPage, pageSize, filterScene);
     }
   }, [user.isLoggedIn, currentPage, pageSize, filterScene]);
+
+  useEffect(() => {
+    if (user.isLoggedIn) void fetchCorpusQuota();
+  }, [user.isLoggedIn]);
+
+  const fetchCorpusQuota = async () => {
+    try {
+      const quota = await getCorpusQuota();
+      setCorpusRemaining(quota.remaining);
+      setCorpusDailyLimit(quota.daily_limit);
+    } catch {
+      // Quota display failure must not block loading the corpus page.
+    }
+  };
 
   const fetchCorpusList = async (page: number, size: number, scene?: string) => {
     setLoading(true);
@@ -118,18 +139,29 @@ export const Corpus: React.FC = () => {
       message.warning(`请至少输入 ${MIN_TEXT_LENGTH} 个字符`);
       return;
     }
+    if (content.length > MAX_TEXT_LENGTH) {
+      message.warning(`内容最多支持 ${MAX_TEXT_LENGTH} 个字符`);
+      return;
+    }
 
     const confirmed = await confirmSceneOverwrite();
     if (!confirmed) return;
 
     setUploading(true);
+    trackFeature('corpus_text_analyze');
     try {
-      await uploadCorpusText(content, `粘贴文案 ${new Date().toLocaleDateString()}`, selectedScene);
+      const response = await uploadCorpusText(
+        content,
+        `粘贴文案 ${new Date().toLocaleDateString()}`,
+        selectedScene,
+      );
+      setCorpusRemaining(response.data.remaining);
       message.success('提交成功，魔方已完成风格分析');
       setTextContent('');
       await refreshFirstPage();
-    } catch (error: any) {
-      message.error(error.response?.data?.detail || '提交失败');
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '提交失败');
+      await fetchCorpusQuota();
     } finally {
       setUploading(false);
     }
@@ -145,16 +177,19 @@ export const Corpus: React.FC = () => {
     if (!confirmed) return;
 
     setUploading(true);
+    trackFeature('corpus_file_analyze');
     try {
-      await uploadCorpusFile(selectedFile, selectedScene);
+      const response = await uploadCorpusFile(selectedFile, selectedScene);
+      setCorpusRemaining(response.data.remaining);
       message.success('上传成功，魔方已完成风格分析');
       setSelectedFile(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
       await refreshFirstPage();
-    } catch (error: any) {
-      message.error(error.response?.data?.detail || '上传失败');
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '上传失败');
+      await fetchCorpusQuota();
     } finally {
       setUploading(false);
     }
@@ -168,6 +203,7 @@ export const Corpus: React.FC = () => {
       cancelText: '取消',
       okButtonProps: { danger: true },
       onOk: async () => {
+        trackFeature('corpus_delete');
         try {
           await deleteCorpusItem(item.id);
           message.success('删除成功');
@@ -182,6 +218,7 @@ export const Corpus: React.FC = () => {
   };
 
   const handleViewReport = (item: CorpusItem) => {
+    trackFeature('corpus_report_view');
     Modal.info({
       title: item.file_name,
       content: (
@@ -193,12 +230,70 @@ export const Corpus: React.FC = () => {
     });
   };
 
+  const clearSelectedFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const confirmModeSwitch = (content: string, onConfirm: () => void, onCancel?: () => void) => {
+    if (switchConfirmOpenRef.current) return;
+    switchConfirmOpenRef.current = true;
+    Modal.confirm({
+      title: '切换语料分析方式',
+      content,
+      okText: '清空并切换',
+      cancelText: '保留当前内容',
+      onOk: () => {
+        switchConfirmOpenRef.current = false;
+        onConfirm();
+      },
+      onCancel: () => {
+        switchConfirmOpenRef.current = false;
+        onCancel?.();
+      },
+    });
+  };
+
+  const switchToTextMode = (nextText?: string) => {
+    const applyTextMode = () => {
+      clearSelectedFile();
+      if (nextText !== undefined) setTextContent(nextText);
+      setActiveMode('text');
+    };
+    if (selectedFile) {
+      confirmModeSwitch(
+        `已选择文件「${selectedFile.name}」。切换到粘贴文案会清空当前文件，是否继续？`,
+        applyTextMode,
+      );
+      return;
+    }
+    applyTextMode();
+  };
+
+  const switchToFileMode = (file: File) => {
+    const applyFileMode = () => {
+      setTextContent('');
+      setSelectedFile(file);
+      setActiveMode('file');
+    };
+    if (textContent.trim()) {
+      confirmModeSwitch(
+        '粘贴文案中已有内容。切换到上传文档会清空当前文本，是否继续？',
+        applyFileMode,
+        () => {
+          if (fileInputRef.current) fileInputRef.current.value = '';
+        },
+      );
+      return;
+    }
+    applyFileMode();
+  };
+
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const droppedFile = event.dataTransfer.files?.[0];
     if (droppedFile) {
-      setSelectedFile(droppedFile);
-      setActiveMode('file');
+      switchToFileMode(droppedFile);
     }
   };
 
@@ -221,17 +316,7 @@ export const Corpus: React.FC = () => {
   };
 
   const formatMeta = (item: CorpusItem) => {
-    const createdAt = new Date(item.created_at);
-    const dateText = Number.isNaN(createdAt.getTime())
-      ? item.created_at
-      : createdAt.toLocaleString('zh-CN', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        });
+    const dateText = formatBackendDateTime(item.created_at);
     return `${dateText} · ${getSceneLabel(item.scene)} · 已分析`;
   };
 
@@ -255,8 +340,15 @@ export const Corpus: React.FC = () => {
 
         <section className="upload-card">
           <h1>让魔方学习你的写作风格</h1>
-          <p className="upload-subtitle">上传你的文章或文案，魔方将分析你的语言风格特点</p>
-
+          <p className="upload-subtitle">
+            <span>上传你的文章或文案，魔方将分析你的语言风格特点</span>
+            <span
+              className={`corpus-quota-hint ${corpusRemaining === 0 ? 'corpus-quota-hint--empty' : ''}`}
+              aria-live="polite"
+            >
+              今日剩余 {corpusRemaining ?? '--'}/{corpusDailyLimit} · 00:00 恢复
+            </span>
+          </p>
           <div className="scene-selector">
             <span>适用类型</span>
             <select
@@ -275,9 +367,10 @@ export const Corpus: React.FC = () => {
           <div className="upload-grid">
             <div className="paste-column">
               <h2>方式一：粘贴文案</h2>
+              <p className="file-hint">支持 50～15000 个字符，建议提供具有代表性的内容</p>
               <button
                 className={`mode-button ${activeMode === 'text' ? 'mode-button--active' : ''}`}
-                onClick={() => setActiveMode('text')}
+                onClick={() => switchToTextMode()}
               >
                 <FileTextOutlined />
                 粘贴文案
@@ -285,8 +378,7 @@ export const Corpus: React.FC = () => {
               <textarea
                 value={textContent}
                 onChange={(event) => {
-                  setTextContent(event.target.value);
-                  setActiveMode('text');
+                  switchToTextMode(event.target.value);
                 }}
                 className="corpus-textarea"
                 placeholder="在此粘贴你的文章内容..."
@@ -296,7 +388,7 @@ export const Corpus: React.FC = () => {
             <div className="file-column">
               <h2>方式二：上传文档</h2>
               <p className="file-hint">
-                支持 .txt .docx .pdf 格式，内容最多 50000 个字符，文件最大 2 MB
+                支持 .txt .docx .pdf 格式，内容最多 15000 个字符，文件最大 2 MB
               </p>
               <div
                 className={`drop-zone ${selectedFile ? 'drop-zone--selected' : ''}`}
@@ -313,8 +405,8 @@ export const Corpus: React.FC = () => {
                 accept=".txt,.docx,.pdf"
                 className="hidden-file-input"
                 onChange={(event) => {
-                  setSelectedFile(event.target.files?.[0] || null);
-                  setActiveMode('file');
+                  const file = event.target.files?.[0];
+                  if (file) switchToFileMode(file);
                 }}
               />
               <button className="upload-file-button" onClick={() => fileInputRef.current?.click()}>
@@ -329,7 +421,9 @@ export const Corpus: React.FC = () => {
               onClick={handleSubmit}
               disabled={
                 uploading ||
+                corpusRemaining === 0 ||
                 (activeMode === 'text' && textContent.trim().length < MIN_TEXT_LENGTH) ||
+                (activeMode === 'text' && textContent.trim().length > MAX_TEXT_LENGTH) ||
                 (activeMode === 'file' && !selectedFile)
               }
             >
