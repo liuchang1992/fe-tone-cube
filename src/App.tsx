@@ -11,6 +11,7 @@ import { DocumentConvertButton } from '@/components/DocumentConvert/DocumentConv
 import { FeedbackWidget } from '@/components/Feedback/FeedbackWidget';
 import { InputArea } from '@/components/InputArea/InputArea';
 import { Layout } from '@/components/Layout/Layout';
+import { CorpusOnboarding } from '@/components/Onboarding/CorpusOnboarding';
 import { OutputArea } from '@/components/OutputArea/OutputArea';
 import { QuotaAlert } from '@/components/Quota/QuotaAlert';
 import { SEOManager } from '@/components/SEO/SEOManager';
@@ -112,14 +113,23 @@ function HomePage() {
 function RouteChangeReset() {
   const location = useLocation();
   const previousPath = useRef(location.pathname);
-  const reset = useAppStore((state) => state.reset);
+  const { preserveConversionDraft, reset, setPreserveConversionDraft } = useAppStore();
 
   useEffect(() => {
     if (previousPath.current !== location.pathname) {
-      reset();
+      const isProtectedDraftRoute =
+        (previousPath.current === '/convert' && location.pathname === '/corpus') ||
+        (previousPath.current === '/corpus' && location.pathname === '/convert');
+
+      if (preserveConversionDraft && isProtectedDraftRoute) {
+        if (location.pathname === '/convert') setPreserveConversionDraft(false);
+      } else {
+        reset();
+        if (preserveConversionDraft) setPreserveConversionDraft(false);
+      }
       previousPath.current = location.pathname;
     }
-  }, [location.pathname, reset]);
+  }, [location.pathname, preserveConversionDraft, reset, setPreserveConversionDraft]);
 
   return null;
 }
@@ -206,9 +216,11 @@ function App() {
 
 function AppContent() {
   const {
+    setShowCorpusOnboarding,
     setShowLoginModal,
     setShowQuotaAlert,
     setShowRegisterModal,
+    showCorpusOnboarding,
     showLoginModal,
     showQuotaAlert,
     showRegisterModal,
@@ -264,6 +276,10 @@ function AppContent() {
             setShowQuotaAlert(false);
             setShowLoginModal(true);
           }}
+        />
+        <CorpusOnboarding
+          isOpen={showCorpusOnboarding}
+          onClose={() => setShowCorpusOnboarding(false)}
         />
         </>
       )}

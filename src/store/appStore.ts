@@ -50,6 +50,8 @@ interface AppState {
   user: UserState;
   showLoginModal: boolean;
   showRegisterModal: boolean;
+  showCorpusOnboarding: boolean;
+  preserveConversionDraft: boolean;
   showQuotaAlert: boolean;
   
   setInput: (text: string) => void;
@@ -59,6 +61,8 @@ interface AppState {
   setUser: (user: UserState) => void;
   setShowLoginModal: (show: boolean) => void;
   setShowRegisterModal: (show: boolean) => void;
+  setShowCorpusOnboarding: (show: boolean) => void;
+  setPreserveConversionDraft: (preserve: boolean) => void;
   setShowQuotaAlert: (show: boolean) => void;
   logout: () => void;
   convert: () => Promise<void>;
@@ -80,7 +84,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   documentTaskResult: null,
   isDocumentPreviewOpen: false,
   error: null,
-  remainingQuota: 10,
+  remainingQuota: 5,
   documentRemainingQuota: null,
   user: {
     username: getStoredUsername() || '',
@@ -88,6 +92,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   showLoginModal: false,
   showRegisterModal: false,
+  showCorpusOnboarding: false,
+  preserveConversionDraft: false,
   showQuotaAlert: false,
 
   setInput: (text) => set({ inputText: text }),
@@ -97,6 +103,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   setUser: (user) => set({ user }),
   setShowLoginModal: (show) => set({ showLoginModal: show }),
   setShowRegisterModal: (show) => set({ showRegisterModal: show }),
+  setShowCorpusOnboarding: (show) => set({ showCorpusOnboarding: show }),
+  setPreserveConversionDraft: (preserve) => set({ preserveConversionDraft: preserve }),
   setShowQuotaAlert: (show) => set({ showQuotaAlert: show }),
   setDocumentPreviewOpen: (open) => set({ isDocumentPreviewOpen: open }),
 

@@ -13,7 +13,9 @@ export interface ConvertResponse {
 }
 
 export const convertText = async (params: ConvertRequest): Promise<string> => {
-  const { data } = await apiClient.post<ConvertResponse>('/api/convert', params);
+  const { data } = await apiClient.post<ConvertResponse>('/api/convert', params, {
+    timeout: 60000,
+  });
   if (!data.success) throw new Error(data.error || '转换失败');
   return data.result;
 };

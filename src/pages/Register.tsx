@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { register } from '@/api/auth';
+import { message } from 'antd';
+import { login, register } from '@/api/auth';
+import { useAppStore } from '@/store/appStore';
 import './AuthPage.less';
 
 export const Register: React.FC = () => {
   const navigate = useNavigate();
+  const { fetchQuota, setShowCorpusOnboarding, setUser } = useAppStore();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -27,12 +30,25 @@ export const Register: React.FC = () => {
     }
 
     setIsLoading(true);
+    let registrationCompleted = false;
     try {
       await register({ username, password });
-      setSuccess('注册成功！正在跳转到登录页...');
-      setTimeout(() => navigate('/login'), 1500);
-    } catch (err: any) {
-      setError(err.message || '注册失败，请稍后重试');
+      registrationCompleted = true;
+
+      const result = await login({ username, password });
+      setUser({ username: result.username, isLoggedIn: true });
+      await fetchQuota();
+
+      message.success('注册成功，已自动登录');
+      navigate('/convert');
+      window.setTimeout(() => setShowCorpusOnboarding(true), 350);
+    } catch (err: unknown) {
+      if (registrationCompleted) {
+        setSuccess('注册成功，但自动登录失败，即将前往登录页...');
+        setTimeout(() => navigate('/login'), 1500);
+      } else {
+        setError(err instanceof Error ? err.message : '注册失败，请稍后重试');
+      }
     } finally {
       setIsLoading(false);
     }

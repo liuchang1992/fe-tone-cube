@@ -2,8 +2,9 @@ import React, { useRef, useState } from 'react';
 import { Checkbox, message } from 'antd';
 import { CloseOutlined, LockOutlined, UserAddOutlined, UserOutlined } from '@ant-design/icons';
 
-import { register } from '@/api/auth';
+import { login, register } from '@/api/auth';
 import { trackFeature } from '@/api/analytics';
+import { useAppStore } from '@/store/appStore';
 import './RegisterModal.less';
 
 interface RegisterModalProps {
@@ -24,6 +25,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
   onClose,
   onSwitchToLogin,
 }) => {
+  const { fetchQuota, setShowCorpusOnboarding, setUser } = useAppStore();
   const usernameInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
@@ -81,15 +83,29 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
     }
 
     setIsLoading(true);
+    let registrationCompleted = false;
     try {
       await register({ username: normalizedUsername, password });
+      registrationCompleted = true;
       trackFeature('register_success');
-      message.success('注册成功，请登录');
-      resetForm();
-      onClose();
-      onSwitchToLogin();
+
+      const result = await login({ username: normalizedUsername, password });
+      trackFeature('login_success');
+      setUser({ username: result.username, isLoggedIn: true });
+      await fetchQuota();
+
+      message.success('注册成功，已自动登录');
+      handleClose();
+      window.setTimeout(() => setShowCorpusOnboarding(true), 350);
     } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '注册失败，请稍后再试');
+      if (registrationCompleted) {
+        message.warning('注册成功，但自动登录失败，请手动登录');
+        resetForm();
+        onClose();
+        onSwitchToLogin();
+      } else {
+        message.error(err instanceof Error ? err.message : '注册失败，请稍后再试');
+      }
     } finally {
       setIsLoading(false);
     }

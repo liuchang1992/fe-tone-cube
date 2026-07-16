@@ -178,7 +178,16 @@ export const Landing: FC = () => {
 
       <footer className="landing-footer">
         <span>语气魔方 · 让表达更像你</span>
-        <button type="button" onClick={() => navigate('/privacy')}>隐私说明</button>
+        <div className="landing-footer__links">
+          <button type="button" onClick={() => navigate('/privacy')}>隐私说明</button>
+          <a
+            href="https://beian.miit.gov.cn/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            京ICP备2026042578号-1
+          </a>
+        </div>
       </footer>
     </main>
   );

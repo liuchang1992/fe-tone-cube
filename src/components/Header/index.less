@@ -103,6 +103,10 @@
   }
 }
 
+.count-label-mobile {
+  display: none;
+}
+
 .user-avatar {
   width: 36px;
   height: 36px;
@@ -195,9 +199,25 @@
     gap: 10px;
   }
 
-  .count-section,
   .user-avatar {
     display: none;
+  }
+
+  .count-section {
+    min-width: 0;
+    height: 32px;
+    padding: 0 10px;
+    font-size: 12px;
+    white-space: nowrap;
+    border-radius: 16px;
+  }
+
+  .count-label-desktop {
+    display: none;
+  }
+
+  .count-label-mobile {
+    display: inline;
   }
 
   .login-btn {

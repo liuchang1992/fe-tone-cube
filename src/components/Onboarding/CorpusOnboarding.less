@@ -1,0 +1,230 @@
+.corpus-onboarding-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(17, 24, 39, 0.42);
+  backdrop-filter: blur(6px);
+}
+
+.corpus-onboarding {
+  position: relative;
+  width: min(460px, 100%);
+  padding: 30px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(196, 181, 253, 0.24), transparent 38%),
+    #fff;
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 28px 80px rgba(30, 19, 55, 0.22);
+  animation: corpus-onboarding-enter 0.24s ease-out;
+
+  h2 {
+    margin: 0;
+    color: #17111f;
+    font-size: 25px;
+    font-weight: 900;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+  }
+}
+
+.corpus-onboarding__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #8b8495;
+  background: rgba(255, 255, 255, 0.72);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color 0.18s ease, background 0.18s ease;
+
+  &:hover {
+    color: #4c4357;
+    background: #f4f1f8;
+  }
+}
+
+.corpus-onboarding__eyebrow {
+  margin: 0 0 9px;
+  color: #7c3aed;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.corpus-onboarding__description {
+  margin: 13px 0 0;
+  color: #655e6f;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.corpus-onboarding__steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    min-width: 0;
+    padding: 12px 8px;
+    color: #494150;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.45;
+    text-align: center;
+    background: rgba(247, 245, 250, 0.9);
+    border: 1px solid #eee9f4;
+    border-radius: 12px;
+  }
+
+  span {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 7px;
+    color: #7c3aed;
+    font-size: 11px;
+    font-weight: 900;
+    background: #ede9fe;
+    border-radius: 50%;
+  }
+}
+
+.corpus-onboarding__hint {
+  margin: 14px 0 0;
+  color: #8a8293;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.corpus-onboarding__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.corpus-onboarding__primary,
+.corpus-onboarding__secondary {
+  min-height: 44px;
+  padding: 0 20px;
+  font-size: 14px;
+  font-weight: 900;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.corpus-onboarding__primary {
+  flex: 1;
+  color: #fff;
+  background: linear-gradient(90deg, #7c3aed, #9f67f3);
+  border: 0;
+  box-shadow: 0 12px 25px rgba(124, 58, 237, 0.24);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 15px 30px rgba(124, 58, 237, 0.3);
+  }
+}
+
+.corpus-onboarding__secondary {
+  color: #706778;
+  background: #fff;
+  border: 1px solid #e7e1ec;
+
+  &:hover {
+    color: #4d4456;
+    background: #f8f6fa;
+  }
+}
+
+@keyframes corpus-onboarding-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 600px) {
+  .corpus-onboarding-mask {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .corpus-onboarding {
+    width: 100%;
+    padding: 25px 20px calc(18px + env(safe-area-inset-bottom));
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 22px 22px 0 0;
+    animation-name: corpus-onboarding-sheet-enter;
+
+    h2 {
+      padding-right: 32px;
+      font-size: 23px;
+    }
+  }
+
+  .corpus-onboarding__description {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .corpus-onboarding__steps {
+    margin-top: 17px;
+
+    li {
+      padding: 10px 5px;
+      font-size: 11px;
+    }
+  }
+
+  .corpus-onboarding__actions {
+    flex-direction: column;
+    gap: 9px;
+    margin-top: 18px;
+  }
+
+  .corpus-onboarding__primary,
+  .corpus-onboarding__secondary {
+    width: 100%;
+    min-height: 46px;
+  }
+}
+
+@keyframes corpus-onboarding-sheet-enter {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .corpus-onboarding {
+    animation: none;
+  }
+}

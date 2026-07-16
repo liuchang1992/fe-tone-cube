@@ -244,4 +244,10 @@
       font-size: 22px;
     }
   }
+
+  // iOS Safari automatically zooms focused form controls below 16px.
+  // Validation focuses the first invalid field, so keep auth inputs at 16px.
+  .auth-input-wrap input {
+    font-size: 16px;
+  }
 }

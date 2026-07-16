@@ -32,7 +32,10 @@ apiClient.interceptors.response.use(
         localStorage.removeItem('username');
       }
     }
-    const msg = error.response?.data?.error || error.response?.data?.detail || error.message || '网络错误';
+    const isTimeout = error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT';
+    const msg = isTimeout
+      ? '请求处理超时，请稍后重试'
+      : error.response?.data?.error || error.response?.data?.detail || error.message || '网络错误';
     return Promise.reject(new Error(msg));
   }
 );

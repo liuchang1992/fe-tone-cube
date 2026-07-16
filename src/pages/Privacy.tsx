@@ -26,7 +26,7 @@ export const Privacy: React.FC = () => {
         <div className="privacy-title-section">
           <Title level={1} className="title">隐私政策</Title>
           <Space size="middle" className="meta">
-            <span>📅 版本：v1.1</span>
+            <span>📅 版本：v1.0</span>
             <span>📌 更新日期：2026年7月13日</span>
             <span>⚡ 生效日期：2026年7月13日</span>
           </Space>
@@ -170,6 +170,10 @@ export const Privacy: React.FC = () => {
         <div className="privacy-copyright">
           © 2026 语气魔方 · 保留所有权利 &nbsp;·&nbsp; 
           <a href="mailto:18233383821@163.com">联系我们</a>
+          &nbsp;·&nbsp;
+          <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">
+            京ICP备2026042578号-1
+          </a>
         </div>
       </div>
     </div>

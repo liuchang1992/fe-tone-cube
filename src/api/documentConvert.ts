@@ -37,7 +37,7 @@ export const createDocumentConvertTask = async (
 
   const { data } = await apiClient.post<DocumentTaskCreateResponse>('/api/document-convert', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 30000,
+    timeout: 60000,
   });
 
   if (!data.success) throw new Error(data.error || '文档任务创建失败');

@@ -22,17 +22,16 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onLoginClick, showMobileNavigation = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { fetchQuota, logout: storeLogout, remainingQuota, user } = useAppStore();
+  const { logout: storeLogout, remainingQuota, user } = useAppStore();
   const isLandingPage = location.pathname === '/';
 
   const handleLogout = () => {
     trackFeature('logout');
     logout();
     storeLogout();
-    fetchQuota();
 
     if (['/history', '/pay', '/corpus'].includes(location.pathname)) {
-      navigate('/');
+      navigate('/convert', { replace: true });
     }
 
     message.success('退出成功');
@@ -110,7 +109,8 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick, showMobileNavigati
       ) : (
         <div className="login-context">
           <div className="count-section">
-            <span>剩余次数：</span>
+            <span className="count-label-desktop">剩余次数：</span>
+            <span className="count-label-mobile">剩余&nbsp;</span>
             <strong>{remainingQuota < 0 ? '∞' : remainingQuota}</strong>
           </div>
           {user.isLoggedIn ? (

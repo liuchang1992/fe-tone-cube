@@ -26,7 +26,9 @@ export interface CorpusQuotaResponse {
 
 // 上传文本语料
 export const uploadCorpusText = async (content: string, file_name: string, scene: string = 'all') => {
-  return apiClient.post<CorpusUploadResponse>('/api/corpus/upload-text', { content, file_name, scene });
+  return apiClient.post<CorpusUploadResponse>('/api/corpus/upload-text', { content, file_name, scene }, {
+    timeout: 60000,
+  });
 };
 
 // 上传文件语料
@@ -36,6 +38,7 @@ export const uploadCorpusFile = async (file: File, scene: string = 'all') => {
   formData.append('scene', scene);
   return apiClient.post<CorpusUploadResponse>('/api/corpus/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60000,
   });
 };
 

@@ -399,7 +399,7 @@
 
   strong {
     color: #a78bfa;
-    font-size: 13px;
+    font-size: 18px;
   }
 
   h3 {
@@ -495,19 +495,29 @@
 
 .landing-footer {
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 20px;
   padding: 24px 0 34px;
   color: #8b91a0;
   font-size: 12px;
   border-top: 1px solid #e7e4ed;
 
-  button {
+  button,
+  a {
     color: #6b7280;
+    text-decoration: none;
 
     &:hover {
       color: #7c3aed;
     }
   }
+}
+
+.landing-footer__links {
+  display: flex;
+  align-items: center;
+  gap: 18px;
 }
 
 @keyframes landing-float {
@@ -657,6 +667,12 @@
 
   .landing-cta button {
     width: 100%;
+  }
+
+  .landing-footer {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
   }
 }
 
