@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowRightOutlined,
   BulbOutlined,
@@ -43,11 +43,13 @@ const formatChars = (count: number) => {
 
 export const PersonalStyles = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const shouldAutoOpenCreate = searchParams.get('create') === '1';
   const { user, setPersonalStyle } = useAppStore();
   const [styles, setStyles] = useState<PersonalStyle[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(shouldAutoOpenCreate);
   const [name, setName] = useState('');
   const [purpose, setPurpose] = useState<StylePurpose>('general');
   const [settingDefaultId, setSettingDefaultId] = useState<number | null>(null);
@@ -56,6 +58,13 @@ export const PersonalStyles = () => {
     materials: styles.reduce((sum, item) => sum + item.material_count, 0),
     active: styles.filter((item) => item.status === 'active').length,
   }), [styles]);
+
+  useEffect(() => {
+    if (!shouldAutoOpenCreate) return;
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('create');
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams, shouldAutoOpenCreate]);
 
   useEffect(() => {
     if (!user.isLoggedIn) {

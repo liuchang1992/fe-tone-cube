@@ -36,6 +36,10 @@ const SCENE_OPTIONS = [
   { value: 'polite', label: '温和礼貌' },
   { value: 'moments', label: '朋友圈分享' },
   { value: 'short_video', label: '短视频口播' },
+  { value: 'government', label: '政务汇报' },
+  { value: 'business', label: '商务沟通' },
+  { value: 'research', label: '科研表达' },
+  { value: 'paper', label: '论文写作' },
 ];
 
 export const Corpus: React.FC = () => {

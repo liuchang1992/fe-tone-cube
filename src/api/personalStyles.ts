@@ -20,6 +20,25 @@ export type MaterialType =
   | 'brand_copy'
   | 'other';
 
+export type StylePreviewScene =
+  | 'formal'
+  | 'xiaohongshu'
+  | 'wechat'
+  | 'email'
+  | 'academic'
+  | 'marketing'
+  | 'customer_service'
+  | 'concise'
+  | 'polite'
+  | 'moments'
+  | 'short_video'
+  | 'government'
+  | 'business'
+  | 'research'
+  | 'paper';
+
+export type StylePreviewStrength = 'light' | 'standard' | 'deep';
+
 export interface StyleDimensions {
   formality: number;
   warmth: number;
@@ -31,6 +50,17 @@ export interface StyleDimensions {
   marketing_tone: number;
 }
 
+export interface StructureRule {
+  element: 'date' | 'heading' | 'greeting' | 'signature' | 'bullet' | 'numbering' | 'separator' | 'emoji' | 'hashtag' | 'custom';
+  role: string;
+  position: 'document_start' | 'document_end' | 'group_start' | 'group_end' | 'before_item' | 'after_item' | 'inline';
+  scope: 'document' | 'group' | 'item' | 'paragraph';
+  frequency: 'once' | 'once_per_group' | 'once_per_item' | 'optional' | 'repeated';
+  source_policy: 'input_only' | 'fixed' | 'generated';
+  pattern: string;
+  instruction: string;
+}
+
 export interface StyleRules {
   sentence_patterns: string[];
   preferred_phrases: string[];
@@ -38,6 +68,7 @@ export interface StyleRules {
   organization: string[];
   custom_instructions: string[];
   protected_terms: string[];
+  structure_rules: StructureRule[];
 }
 
 export interface PersonalStyleDetails {
@@ -95,6 +126,7 @@ export const EMPTY_RULES: StyleRules = {
   organization: [],
   custom_instructions: [],
   protected_terms: [],
+  structure_rules: [],
 };
 
 export const listPersonalStyles = async (): Promise<PersonalStyle[]> => {
@@ -182,6 +214,23 @@ export const analyzePersonalStyle = async (styleId: number) => {
     rules: StyleRules;
     remaining: number;
   }>(`/api/personal-styles/${styleId}/analyze`, undefined, { timeout: 90000 });
+  return response.data;
+};
+
+export const previewPersonalStyle = async (
+  styleId: number,
+  payload: {
+    text: string;
+    style: StylePreviewScene;
+    rewrite_strength: StylePreviewStrength;
+    details: { summary: string; dimensions: StyleDimensions; rules: StyleRules };
+  },
+) => {
+  const response = await apiClient.post<{ result: string }>(
+    `/api/personal-styles/${styleId}/preview`,
+    payload,
+    { timeout: 90000 },
+  );
   return response.data;
 };
 

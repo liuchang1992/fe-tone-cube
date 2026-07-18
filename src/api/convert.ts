@@ -9,6 +9,7 @@ export interface ConvertRequest {
   use_personal_style?: boolean;
   comparison_group_id?: string;
   rewrite_strength?: RewriteStrength;
+  privacy_mode?: boolean;
 }
 
 export interface ConvertResponse {

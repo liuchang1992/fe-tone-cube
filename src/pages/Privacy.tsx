@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Space, Typography, Divider, Tag } from 'antd';
-import { LeftOutlined, MailOutlined, CheckOutlined } from '@ant-design/icons';
+import { Button, Space, Typography, Tag } from 'antd';
+import { CheckOutlined, LeftOutlined, MailOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import './Privacy.less';
 
 const { Title, Text, Paragraph } = Typography;
@@ -26,9 +26,9 @@ export const Privacy: React.FC = () => {
         <div className="privacy-title-section">
           <Title level={1} className="title">隐私政策</Title>
           <Space size="middle" className="meta">
-            <span>📅 版本：v1.0</span>
-            <span>📌 更新日期：2026年7月13日</span>
-            <span>⚡ 生效日期：2026年7月13日</span>
+            <span>📅 版本：v1.1</span>
+            <span>📌 更新日期：2026年7月18日</span>
+            <span>⚡ 生效日期：2026年7月18日</span>
           </Space>
         </div>
 
@@ -48,6 +48,34 @@ export const Privacy: React.FC = () => {
             <span>内容仅用于安全检测、语气转换，以及您主动使用的历史记录和个人语料功能。</span>
           </div>
 
+          <div className="privacy-protection-summary">
+            <div className="privacy-protection-summary__heading">
+              <span><SafetyCertificateOutlined /> 隐私保护模式</span>
+              <strong>已确认保护的字段无需离开当前浏览器</strong>
+            </div>
+            <div className="privacy-protection-summary__steps">
+              {[
+                ['1', '本地识别', '浏览器识别可能的敏感字段'],
+                ['2', '用户确认', '您检查实际发送的脱敏文本'],
+                ['3', '脱敏转换', '仅将脱敏后的文本提交处理'],
+                ['4', '本地还原', '浏览器在结果中恢复原始字段'],
+              ].map(([number, title, description]) => (
+                <div key={number}>
+                  <b>{number}</b>
+                  <strong>{title}</strong>
+                  <span>{description}</span>
+                </div>
+              ))}
+            </div>
+            <ul>
+              <li>敏感字段与占位符的对应关系只保留在当前页面内存中，不会随请求上传。</li>
+              <li>隐私保护模式下的转换不会写入账号历史记录、结果缓存或效果对比记录。</li>
+              <li>本机敏感词库只存储在当前浏览器，不会同步至账号或其他设备。</li>
+              <li>当前仅支持输入框中的文本；上传文档暂不支持本地脱敏。</li>
+            </ul>
+            <p>自动识别可能存在遗漏或误判，请在提交前检查页面展示的“实际发送内容”。</p>
+          </div>
+
           {/* 一 */}
           <Title level={2}>一、我们如何收集和使用您的信息</Title>
           <Paragraph>在您使用本产品的过程中，我们会收集以下信息：</Paragraph>
@@ -58,6 +86,12 @@ export const Privacy: React.FC = () => {
               <strong>输入文本和上传文档</strong>：您在使用语气转换或文档分析功能时提交的内容。
               <br />
               <Tag color="purple" style={{ marginTop: 4 }}>✓ 不会用于训练或微调模型</Tag>
+            </li>
+            <li>
+              <strong>本地脱敏转换</strong>：开启隐私保护后，您确认的敏感字段会先在浏览器内替换为占位符，服务端和模型推理服务仅接收脱敏后的文本；字段映射只保留在当前页面内存中。
+            </li>
+            <li>
+              <strong>本机敏感词库</strong>：仅当您主动勾选保存时，词条才会存入当前浏览器，用于后续本地识别；词库不会同步到账号，您可以随时在脱敏确认页面删除或清空。
             </li>
             <li><strong>个人语料</strong>：您主动提交用于分析个人表达风格的文本或文档。</li>
             <li><strong>账户信息</strong>：如果您注册账号，我们会收集您的用户名及保障账号正常使用所需的信息。</li>
@@ -77,6 +111,7 @@ export const Privacy: React.FC = () => {
             <li><strong>提供核心服务</strong>：将您输入的文本转换为目标语气风格。</li>
             <li><strong>内容安全检测</strong>：识别不适合处理的内容并向您提示。</li>
             <li><strong>调用模型推理服务</strong>：为提供转换和分析服务，我们会将相关内容传输至阿里云百炼进行处理。</li>
+            <li><strong>隐私保护模式</strong>：当您主动开启该模式时，我们仅接收您确认后的脱敏文本；敏感字段识别、替换关系保存和结果还原在当前浏览器内完成。</li>
             <li><strong>历史记录与个人语料</strong>：在您登录并主动使用相关功能时，保存内容以便后续查看或复用个人表达风格。</li>
             <li><strong>优化服务质量</strong>：统计页面访问和功能使用情况以改进产品；产品分析事件不包含您的文案正文。</li>
             <li><strong>安全保障</strong>：维护服务的安全稳定运行，防止欺诈和滥用。</li>
@@ -86,13 +121,14 @@ export const Privacy: React.FC = () => {
           <Title level={2}>三、我们如何存储和保护您的信息</Title>
           <ul>
             <li>
-              <strong>存储地点</strong>：您的信息存储于<Text strong>中国境内的阿里云服务器</Text>。
+              <strong>存储地点</strong>：需要由服务端处理或由您主动保存的信息，存储于<Text strong>中国境内的阿里云服务器</Text>；本机敏感词库仅存储在当前浏览器中。
             </li>
             <li>
               <strong>存储期限</strong>：
               <ul>
                 <li>未登录用户的普通转换内容不会写入业务历史记录。</li>
                 <li>登录后的成功转换记录（包括输入和结果）会保存在您的账号下，您可在历史记录中手动删除。</li>
+                <li>本地脱敏转换不会写入账号历史记录、转换结果缓存或效果对比记录。</li>
                 <li>您主动提交的个人语料会保存在账号下，用于个人风格功能，直至您替换、删除或联系我们处理。</li>
                 <li>文档异步任务的临时处理数据和任务结果会在服务端按任务有效期自动清理。</li>
               </ul>
@@ -105,7 +141,7 @@ export const Privacy: React.FC = () => {
           <Paragraph>我们不会出售或非法共享您的个人信息。以下情况除外：</Paragraph>
           <ul>
             <li>
-              <strong>模型推理服务商</strong>：为提供语气转换和分析服务，我们会将必要内容传输至阿里云百炼API。阿里云百炼说明，未经用户明确授权不会使用对话数据训练模型；其仍可能依据法律法规和服务运行要求处理或存储调用数据。您可查看
+              <strong>模型推理服务商</strong>：为提供语气转换和分析服务，我们会将必要内容传输至阿里云百炼API；开启隐私保护模式时，传输的是您确认后的脱敏文本。阿里云百炼说明，未经用户明确授权不会使用对话数据训练模型；其仍可能依据法律法规和服务运行要求处理或存储调用数据。您可查看
               <a href="https://help.aliyun.com/zh/model-studio/privacy-notice" target="_blank" rel="noreferrer">阿里云百炼隐私说明</a>。
             </li>
             <li><strong>法律法规要求</strong>：根据法律法规或政府部门的强制性要求。</li>
@@ -118,7 +154,7 @@ export const Privacy: React.FC = () => {
           <ul>
             <li><strong>访问权</strong>：您可以登录账号查看您的历史记录。</li>
             <li><strong>更正权</strong>：您可以修改您的账户信息。</li>
-            <li><strong>删除权</strong>：您可以删除历史记录和个人语料，或联系我们删除您的账户信息。</li>
+            <li><strong>删除权</strong>：您可以删除历史记录和个人语料，清空当前浏览器的本机敏感词库，或联系我们删除您的账户信息。</li>
             <li><strong>撤回同意权</strong>：您可以通过停止使用本产品来撤回您的同意。</li>
             <li><strong>注销账户</strong>：您可以联系客服注销您的账号。</li>
           </ul>

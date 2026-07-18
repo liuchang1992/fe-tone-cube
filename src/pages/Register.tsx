@@ -7,7 +7,7 @@ import './AuthPage.less';
 
 export const Register: React.FC = () => {
   const navigate = useNavigate();
-  const { fetchQuota, setShowCorpusOnboarding, setUser } = useAppStore();
+  const { fetchQuota, setShowPersonalStyleOnboarding, setUser } = useAppStore();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -41,7 +41,7 @@ export const Register: React.FC = () => {
 
       message.success('注册成功，已自动登录');
       navigate('/convert');
-      window.setTimeout(() => setShowCorpusOnboarding(true), 350);
+      window.setTimeout(() => setShowPersonalStyleOnboarding(true), 350);
     } catch (err: unknown) {
       if (registrationCompleted) {
         setSuccess('注册成功，但自动登录失败，即将前往登录页...');

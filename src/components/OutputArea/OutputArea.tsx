@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { message, Modal, Spin } from 'antd';
-import { CopyOutlined, SwapOutlined } from '@ant-design/icons';
+import { CopyOutlined, LockOutlined, SwapOutlined } from '@ant-design/icons';
 
 import { convertText } from '@/api/convert';
 import { saveComparisonPreference } from '@/api/history';
@@ -9,7 +9,15 @@ import { useAppStore } from '@/store/appStore';
 import './index.less';
 
 export const OutputArea: React.FC = () => {
-  const { fetchQuota, isLoading, lastPersonalConversion, outputText, setOutput } = useAppStore();
+  const {
+    fetchQuota,
+    isLoading,
+    lastConversionPrivacyCount,
+    lastConversionPrivacyMode,
+    lastPersonalConversion,
+    outputText,
+    setOutput,
+  } = useAppStore();
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [comparisonLoading, setComparisonLoading] = useState(false);
   const [baselineResult, setBaselineResult] = useState('');
@@ -130,7 +138,17 @@ export const OutputArea: React.FC = () => {
 
       {(displayText || outputText) && !isLoading && (
         <div className="output-info">
-          <span>{outputLength} 字</span>
+          <span className="output-info__summary">
+            <span className="output-info__count">{outputLength} 字</span>
+            {lastConversionPrivacyMode && (
+              <small>
+                <LockOutlined />
+                {lastConversionPrivacyCount > 0
+                  ? `已本地恢复 ${lastConversionPrivacyCount} 处 · 未存历史`
+                  : '隐私转换 · 未存历史'}
+              </small>
+            )}
+          </span>
           <div className="output-info__actions">
             {isComplete && lastPersonalConversion && (
               <button type="button" className="compare-btn" onClick={openComparison}>

@@ -9,12 +9,15 @@ import {
   InboxOutlined,
   HighlightOutlined,
   InfoCircleOutlined,
+  MoreOutlined,
   PlusOutlined,
   SaveOutlined,
   StarFilled,
   StarOutlined,
+  StopOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons';
-import { Input, Modal, Select, Slider, Spin, Switch, message } from 'antd';
+import { Dropdown, Input, Modal, Select, Slider, Spin, Switch, message } from 'antd';
 
 import {
   DEFAULT_DIMENSIONS,
@@ -26,6 +29,8 @@ import {
   type StyleMaterial,
   type StylePurpose,
   type StyleRules,
+  type StylePreviewScene,
+  type StylePreviewStrength,
   addFileStyleMaterial,
   addTextStyleMaterial,
   analyzePersonalStyle,
@@ -36,6 +41,7 @@ import {
   getStyleMaterial,
   listStyleMaterials,
   listPersonalStyleVersions,
+  previewPersonalStyle,
   restorePersonalStyleVersion,
   savePersonalStyleDetails,
   setDefaultPersonalStyle,
@@ -69,6 +75,30 @@ const MATERIAL_OPTIONS: Array<{ value: MaterialType; label: string }> = [
   { value: 'other', label: '其他素材' },
 ];
 
+const PREVIEW_SCENE_OPTIONS: Array<{ value: StylePreviewScene; label: string }> = [
+  { value: 'formal', label: '职场汇报' },
+  { value: 'email', label: '邮件沟通' },
+  { value: 'concise', label: '简洁直接' },
+  { value: 'polite', label: '温和礼貌' },
+  { value: 'wechat', label: '微信聊天' },
+  { value: 'marketing', label: '营销文案' },
+  { value: 'customer_service', label: '客户沟通' },
+  { value: 'xiaohongshu', label: '小红书种草' },
+  { value: 'short_video', label: '短视频口播' },
+  { value: 'academic', label: '专业严谨' },
+  { value: 'moments', label: '朋友圈分享' },
+  { value: 'government', label: '政务汇报' },
+  { value: 'business', label: '商务沟通' },
+  { value: 'research', label: '科研表达' },
+  { value: 'paper', label: '论文写作' },
+];
+
+const PREVIEW_STRENGTH_OPTIONS: Array<{ value: StylePreviewStrength; label: string }> = [
+  { value: 'light', label: '仅润色' },
+  { value: 'standard', label: '常规改写' },
+  { value: 'deep', label: '结构重组' },
+];
+
 const DIMENSION_OPTIONS: Array<{
   key: keyof StyleDimensions;
   label: string;
@@ -85,7 +115,9 @@ const DIMENSION_OPTIONS: Array<{
   { key: 'marketing_tone', label: '营销感', low: '自然', high: '营销' },
 ];
 
-const RULE_OPTIONS: Array<{ key: keyof StyleRules; label: string; placeholder: string }> = [
+type TextRuleKey = Exclude<keyof StyleRules, 'structure_rules'>;
+
+const RULE_OPTIONS: Array<{ key: TextRuleKey; label: string; placeholder: string }> = [
   { key: 'sentence_patterns', label: '句式特点', placeholder: '输入特点后回车，例如：短句为主' },
   { key: 'preferred_phrases', label: '偏好表达', placeholder: '输入常用表达后回车' },
   { key: 'avoided_phrases', label: '禁止使用', placeholder: '输入结果中不能出现的词语' },
@@ -93,6 +125,27 @@ const RULE_OPTIONS: Array<{ key: keyof StyleRules; label: string; placeholder: s
   { key: 'custom_instructions', label: '补充要求', placeholder: '例如：不要使用空泛客套话' },
   { key: 'protected_terms', label: '保留术语', placeholder: '输入不可改写的品牌词或术语' },
 ];
+
+const STRUCTURE_ELEMENT_LABELS: Record<StyleRules['structure_rules'][number]['element'], string> = {
+  date: '日期',
+  heading: '标题',
+  greeting: '称呼',
+  signature: '落款',
+  bullet: '项目符号',
+  numbering: '编号',
+  separator: '分隔符',
+  emoji: 'Emoji',
+  hashtag: '话题标签',
+  custom: '其他结构',
+};
+
+const STRUCTURE_FREQUENCY_LABELS: Record<StyleRules['structure_rules'][number]['frequency'], string> = {
+  once: '全文一次',
+  once_per_group: '每组一次',
+  once_per_item: '每项一次',
+  optional: '按需出现',
+  repeated: '允许重复',
+};
 
 const purposeLabel = (purpose: StylePurpose) =>
   PURPOSE_OPTIONS.find((item) => item.value === purpose)?.label || '通用表达';
@@ -112,6 +165,7 @@ const getProfileFingerprint = (
   summary: summary.trim(),
   dimensions: DIMENSION_OPTIONS.map((item) => [item.key, dimensions[item.key]]),
   rules: RULE_OPTIONS.map((item) => [item.key, rules[item.key]]),
+  structure_rules: rules.structure_rules,
 });
 
 export const PersonalStyleDetail = () => {
@@ -151,6 +205,13 @@ export const PersonalStyleDetail = () => {
   const [selectedVersion, setSelectedVersion] = useState<PersonalStyleVersion | null>(null);
   const [restoringVersion, setRestoringVersion] = useState<number | null>(null);
   const [settingDefault, setSettingDefault] = useState(false);
+  const [previewText, setPreviewText] = useState('');
+  const [previewResult, setPreviewResult] = useState('');
+  const [previewing, setPreviewing] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewScene, setPreviewScene] = useState<StylePreviewScene>('formal');
+  const [previewStrength, setPreviewStrength] = useState<StylePreviewStrength>('standard');
+  const [previewProfileFingerprint, setPreviewProfileFingerprint] = useState('');
 
   const enoughMaterial = (style?.material_char_count || 0) >= 300;
   const completeness = Math.min(100, Math.round(((style?.material_char_count || 0) / 300) * 100));
@@ -161,6 +222,13 @@ export const PersonalStyleDetail = () => {
   const profileChanged = useMemo(
     () => getProfileFingerprint(summary, dimensions, rules) !== savedProfileFingerprint,
     [dimensions, rules, savedProfileFingerprint, summary],
+  );
+  const currentProfileFingerprint = useMemo(
+    () => getProfileFingerprint(summary, dimensions, rules),
+    [dimensions, rules, summary],
+  );
+  const previewIsStale = Boolean(
+    previewResult && previewProfileFingerprint !== currentProfileFingerprint,
   );
   const selectedVersionDimensions = useMemo(
     () => ({ ...DEFAULT_DIMENSIONS, ...(selectedVersion?.dimensions || {}) }),
@@ -242,21 +310,21 @@ export const PersonalStyleDetail = () => {
 
   const handleAnalyze = () => {
     if (!enoughMaterial) {
-      message.warning('至少需要 300 字素材才能分析；也可以跳过素材，直接编辑左侧配置');
+      message.warning('关联素材至少需要 300 字才能分析；也可以跳过关联素材，直接编辑最终配置');
       return;
     }
     const replacesCurrentProfile = Boolean(style?.current_version || profileChanged);
     Modal.confirm({
       title: replacesCurrentProfile
-        ? '根据素材重新生成左侧配置？'
-        : '根据素材生成左侧配置？',
+        ? '根据关联素材重新生成最终配置？'
+        : '根据关联素材生成最终配置？',
       content: (
         <div className="psd-analyze-confirm">
-          <p>系统会以右侧当前素材为主要依据，生成风格概览、表达维度和表达规则。</p>
+          <p>系统会以当前关联素材为主要依据，生成风格概览、表达维度和表达规则。</p>
           {replacesCurrentProfile && (
-            <p className="is-warning">生成结果会替换左侧当前显示的配置；已有历史版本仍会保留。</p>
+            <p className="is-warning">生成结果会替换最终配置区当前显示的内容；已有历史版本仍会保留。</p>
           )}
-          <p>建议先完成素材分析，再在左侧微调并保存。</p>
+          <p>建议先完成关联素材分析，再到最终配置区微调并保存。</p>
         </div>
       ),
       okText: replacesCurrentProfile ? '确认重新生成' : '开始生成',
@@ -292,6 +360,32 @@ export const PersonalStyleDetail = () => {
     }
   };
 
+  const handlePreview = async () => {
+    if (!summary.trim()) {
+      message.warning('请先填写风格概览，再进行试写');
+      return;
+    }
+    if (!previewText.trim()) {
+      message.warning('请输入一段要试写的原文');
+      return;
+    }
+    setPreviewing(true);
+    try {
+      const result = await previewPersonalStyle(styleId, {
+        text: previewText.trim(),
+        style: previewScene,
+        rewrite_strength: previewStrength,
+        details: { summary: summary.trim(), dimensions, rules },
+      });
+      setPreviewResult(result.result);
+      setPreviewProfileFingerprint(currentProfileFingerprint);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '试写失败');
+    } finally {
+      setPreviewing(false);
+    }
+  };
+
   const openEdit = () => {
     if (!style) return;
     setEditName(style.name);
@@ -316,14 +410,14 @@ export const PersonalStyleDetail = () => {
 
   const handleArchive = () => {
     Modal.confirm({
-      title: '归档这套个人风格？',
-      content: '归档后不会删除关联素材，但这套风格将不再出现在转换选择中。',
-      okText: '确认归档',
+      title: '停用这套个人风格？',
+      content: '停用后，这套风格将不再出现在个人风格列表和转换选择中；关联素材与历史版本仍会保留。',
+      okText: '确认停用',
       cancelText: '取消',
       okButtonProps: { danger: true },
       onOk: async () => {
         await archivePersonalStyle(styleId);
-        message.success('个人风格已归档');
+        message.success('个人风格已停用');
         navigate('/personal-styles', { replace: true });
       },
     });
@@ -401,7 +495,7 @@ export const PersonalStyleDetail = () => {
         <div className="psd-analyze-confirm">
           <p>系统会复制这个历史版本的配置，并保存为一个新的当前版本；已有版本不会被删除。</p>
           {profileChanged && (
-            <p className="is-warning">左侧还有未保存的调整，恢复后这些调整会被历史版本替换。</p>
+            <p className="is-warning">最终配置区还有未保存的调整，恢复后这些调整会被历史版本替换。</p>
           )}
         </div>
       ),
@@ -442,7 +536,7 @@ export const PersonalStyleDetail = () => {
 
   const handleAddMaterial = async () => {
     if (materialMode === 'text' && materialContent.trim().length < 50) {
-      message.warning('粘贴素材至少需要 50 个字符');
+      message.warning('粘贴的关联素材至少需要 50 个字符');
       return;
     }
     if (materialMode === 'file' && !materialFile) {
@@ -454,7 +548,7 @@ export const PersonalStyleDetail = () => {
       if (materialMode === 'text') {
         await addTextStyleMaterial(styleId, {
           content: materialContent.trim(),
-          file_name: materialName.trim() || `粘贴素材 ${materials.length + 1}`,
+          file_name: materialName.trim() || `关联素材 ${materials.length + 1}`,
           material_type: materialType,
           is_representative: representative,
         });
@@ -463,9 +557,9 @@ export const PersonalStyleDetail = () => {
       }
       setMaterialOpen(false);
       await refreshStyleAndMaterials();
-      message.success('素材已添加；左侧配置暂未改变，点击“生成/重新分析”后才会更新');
+      message.success('关联素材已添加；最终配置暂未改变，点击“生成/重新分析”后才会更新');
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '素材添加失败');
+      message.error(error instanceof Error ? error.message : '关联素材添加失败');
     } finally {
       setAddingMaterial(false);
     }
@@ -475,7 +569,7 @@ export const PersonalStyleDetail = () => {
     try {
       setViewMaterial(await getStyleMaterial(styleId, material.id));
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '素材加载失败');
+      message.error(error instanceof Error ? error.message : '关联素材加载失败');
     }
   };
 
@@ -485,7 +579,7 @@ export const PersonalStyleDetail = () => {
         is_representative: !material.is_representative,
       });
       await refreshStyleAndMaterials();
-      message.success(material.is_representative ? '已取消代表素材' : '已设为代表素材');
+      message.success(material.is_representative ? '已取消优先参考' : '已设为优先参考的关联素材');
     } catch (error) {
       message.error(error instanceof Error ? error.message : '更新失败');
     }
@@ -493,7 +587,7 @@ export const PersonalStyleDetail = () => {
 
   const handleDeleteMaterial = (material: StyleMaterial) => {
     Modal.confirm({
-      title: '删除这份素材？',
+      title: '删除这份关联素材？',
       content: `「${material.file_name}」删除后不会影响已经保存的风格版本。`,
       okText: '删除',
       cancelText: '取消',
@@ -501,7 +595,7 @@ export const PersonalStyleDetail = () => {
       onOk: async () => {
         await deleteStyleMaterial(styleId, material.id);
         await refreshStyleAndMaterials();
-        message.success('素材已删除');
+        message.success('关联素材已删除');
       },
     });
   };
@@ -521,25 +615,60 @@ export const PersonalStyleDetail = () => {
           title={style.name}
           onBack={() => navigate('/personal-styles')}
           action={(
-            <div className="psd-header-actions">
-              <button
-                type="button"
-                className={`psd-subtle-button ${style.is_default ? 'is-default' : ''}`}
-                disabled={style.current_version <= 0 || settingDefault}
-                title={style.current_version <= 0 ? '请先保存一版风格配置' : style.is_default ? '取消默认风格' : undefined}
-                onClick={handleSetDefault}
-              >
-                {style.is_default ? <StarFilled /> : <StarOutlined />}
-                {settingDefault ? '处理中' : style.is_default ? '取消默认' : '设为默认'}
-              </button>
-              {style.current_version > 0 && (
-                <button type="button" className="psd-subtle-button" onClick={openVersionHistory}>
-                  <HistoryOutlined /> 版本历史
+            <>
+              <div className="psd-header-actions">
+                <button
+                  type="button"
+                  className={`psd-subtle-button ${style.is_default ? 'is-default' : ''}`}
+                  disabled={style.current_version <= 0 || settingDefault}
+                  title={style.current_version <= 0 ? '请先保存一版风格配置' : style.is_default ? '取消默认风格' : undefined}
+                  onClick={handleSetDefault}
+                >
+                  {style.is_default ? <StarFilled /> : <StarOutlined />}
+                  {settingDefault ? '处理中' : style.is_default ? '取消默认' : '设为默认'}
                 </button>
-              )}
-              <button type="button" className="psd-subtle-button" onClick={openEdit}><EditOutlined /> 编辑</button>
-              <button type="button" className="psd-danger-link" onClick={handleArchive}>归档</button>
-            </div>
+                {style.current_version > 0 && (
+                  <button type="button" className="psd-subtle-button" onClick={openVersionHistory}>
+                    <HistoryOutlined /> 版本历史
+                  </button>
+                )}
+                <button type="button" className="psd-subtle-button" onClick={openEdit}><EditOutlined /> 编辑</button>
+                <button type="button" className="psd-danger-link" onClick={handleArchive}>停用</button>
+              </div>
+              <Dropdown
+                trigger={['click']}
+                placement="bottomRight"
+                menu={{
+                  items: [
+                    {
+                      key: 'default',
+                      icon: style.is_default ? <StarFilled /> : <StarOutlined />,
+                      label: settingDefault ? '处理中...' : style.is_default ? '取消默认' : '设为默认',
+                      disabled: style.current_version <= 0 || settingDefault,
+                    },
+                    {
+                      key: 'history',
+                      icon: <HistoryOutlined />,
+                      label: '版本历史',
+                      disabled: style.current_version <= 0,
+                    },
+                    { key: 'edit', icon: <EditOutlined />, label: '编辑基本信息' },
+                    { type: 'divider' },
+                    { key: 'archive', icon: <StopOutlined />, label: '停用个人风格', danger: true },
+                  ],
+                  onClick: ({ key }) => {
+                    if (key === 'default') handleSetDefault();
+                    if (key === 'history') openVersionHistory();
+                    if (key === 'edit') openEdit();
+                    if (key === 'archive') handleArchive();
+                  },
+                }}
+              >
+                <button type="button" className="psd-mobile-header-menu" aria-label="更多个人风格操作">
+                  <MoreOutlined /> 更多
+                </button>
+              </Dropdown>
+            </>
           )}
         />
 
@@ -553,16 +682,16 @@ export const PersonalStyleDetail = () => {
                   {style.status === 'active' ? `已启用 · 版本 ${style.current_version}` : '等待分析'}
                 </span>
               </div>
-              <p>{purposeLabel(style.purpose)} · {style.material_count} 份素材 · {formatChars(style.material_char_count)}</p>
+              <p>{purposeLabel(style.purpose)} · {style.material_count} 份关联素材 · {formatChars(style.material_char_count)}</p>
             </div>
           </div>
           <div className="psd-overview-readiness">
             <div className="psd-readiness-copy">
-              <span>素材充分度</span>
+              <span>关联素材充分度</span>
               <strong>{enoughMaterial ? '可以分析' : `${completeness}%`}</strong>
             </div>
             <div className="psd-readiness-track"><span style={{ width: `${completeness}%` }} /></div>
-            <small>{enoughMaterial ? '素材越丰富，风格越稳定' : `还差 ${Math.max(0, 300 - style.material_char_count)} 字`}</small>
+            <small>{enoughMaterial ? '关联素材越丰富，风格越稳定' : `还差 ${Math.max(0, 300 - style.material_char_count)} 字`}</small>
           </div>
           <button
             type="button"
@@ -581,20 +710,20 @@ export const PersonalStyleDetail = () => {
           </div>
           <div className="psd-start-guide__path is-recommended">
             <b>推荐</b>
-            <span><strong>用素材生成</strong>：右侧添加本人作品 → 累计至少 300 字 → 点击上方生成画像 → 在左侧微调并保存</span>
+            <span><strong>用关联素材生成</strong>：添加本人作品作为关联素材 → 累计至少 300 字 → 生成风格画像 → 在最终配置区微调并保存</span>
           </div>
           <div className="psd-start-guide__path">
             <b>手动</b>
-            <span><strong>直接配置</strong>：没有素材也没关系，直接填写左侧概览、维度和规则，然后保存</span>
+            <span><strong>直接配置</strong>：没有关联素材也没关系，直接填写最终配置区的概览、维度和规则，然后保存</span>
           </div>
-          <p><strong>请注意：</strong>重新分析会优先依据右侧当前素材生成，并替换左侧当前配置。建议先分析素材，再进行手动调整。</p>
+          <p><strong>请注意：</strong>重新分析会优先依据当前关联素材生成，并替换最终配置区的当前内容。建议先分析关联素材，再进行手动调整。</p>
         </section>
 
         <div className="psd-workspace">
           <section className="psd-profile-column">
             <div className="psd-column-label">
               <span>最终生效配置</span>
-              <p>这里的内容会用于转换；可以由素材生成，也可以完全手动设置。</p>
+              <p>这里的内容会用于转换；可以由关联素材生成，也可以完全手动设置。</p>
             </div>
             <div className="psd-panel psd-summary-panel">
               <div className="psd-panel-heading">
@@ -657,17 +786,61 @@ export const PersonalStyleDetail = () => {
                   </label>
                 ))}
               </div>
+              {rules.structure_rules.length > 0 && (
+                <div className="psd-structure-rules">
+                  <div className="psd-structure-rules__heading">
+                    <div>
+                      <strong>结构规则</strong>
+                      <span>由关联素材分析生成，用于控制标题、日期、称呼、落款等元素的位置和重复范围。</span>
+                    </div>
+                    <b>{rules.structure_rules.length} 条</b>
+                  </div>
+                  <div className="psd-structure-rules__list">
+                    {rules.structure_rules.map((rule, index) => (
+                      <article key={`${rule.element}-${rule.position}-${index}`}>
+                        <div>
+                          <span>{STRUCTURE_ELEMENT_LABELS[rule.element]}</span>
+                          <span>{STRUCTURE_FREQUENCY_LABELS[rule.frequency]}</span>
+                          {rule.pattern && <code>{rule.pattern}</code>}
+                        </div>
+                        <p>{rule.instruction}</p>
+                        <button
+                          type="button"
+                          title="移除这条结构规则"
+                          onClick={() => setRules((current) => ({
+                            ...current,
+                            structure_rules: current.structure_rules.filter((_, itemIndex) => itemIndex !== index),
+                          }))}
+                        >
+                          <DeleteOutlined />
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="psd-save-row">
                 <span>{profileChanged ? '有尚未保存的调整。保存会创建新版本。' : '当前配置与已保存版本一致。'}</span>
-                <button
-                  type="button"
-                  className="psd-save-button"
-                  onClick={() => void handleSaveDetails()}
-                  disabled={saving || !summary.trim() || !profileChanged}
-                  title={!profileChanged ? '修改配置后才能保存新版本' : undefined}
-                >
-                  <SaveOutlined /> {saving ? '保存中...' : '保存为新版本'}
-                </button>
+                <div className="psd-save-actions">
+                  <button
+                    type="button"
+                    className="psd-preview-trigger"
+                    disabled={!summary.trim()}
+                    title={!summary.trim() ? '请先填写风格概览' : '使用页面当前配置试写'}
+                    onClick={() => setPreviewOpen(true)}
+                  >
+                    <ThunderboltOutlined /> 试写效果
+                  </button>
+                  <button
+                    type="button"
+                    className="psd-save-button"
+                    onClick={() => void handleSaveDetails()}
+                    disabled={saving || !summary.trim() || !profileChanged}
+                    title={!profileChanged ? '修改配置后才能保存新版本' : undefined}
+                  >
+                    <SaveOutlined /> {saving ? '保存中...' : '保存为新版本'}
+                  </button>
+                </div>
               </div>
             </div>
           </section>
@@ -675,7 +848,7 @@ export const PersonalStyleDetail = () => {
           <aside className="psd-material-column">
             <div className="psd-column-label">
               <span>AI 分析依据</span>
-              <p>上传素材不会自动修改左侧；点击生成或重新分析后才会更新。</p>
+              <p>添加关联素材不会自动修改最终配置；点击生成或重新分析后才会更新。</p>
             </div>
             <div className="psd-panel psd-material-panel">
               <div className="psd-panel-heading psd-material-heading">
@@ -685,9 +858,9 @@ export const PersonalStyleDetail = () => {
               {materials.length === 0 ? (
                 <div className="psd-material-empty">
                   <span><FileAddOutlined /></span>
-                  <strong>还没有表达素材</strong>
-                  <p>添加你本人写过的内容，建议先准备 2～3 份。</p>
-                  <button type="button" onClick={openAddMaterial}>添加第一份素材</button>
+                  <strong>还没有关联素材</strong>
+                  <p>添加你本人写过的内容作为分析依据，建议先准备 2～3 份。</p>
+                  <button type="button" onClick={openAddMaterial}>添加第一份关联素材</button>
                 </div>
               ) : (
                 <div className="psd-material-list">
@@ -698,19 +871,19 @@ export const PersonalStyleDetail = () => {
                         <span className="psd-material-copy">
                           <strong>{material.file_name}</strong>
                           <small>{materialLabel(material.material_type)} · {formatChars(material.char_count)}</small>
-                          <p>{material.preview || '点击查看素材内容'}</p>
+                          <p>{material.preview || '点击查看关联素材内容'}</p>
                         </span>
                       </button>
                       <div className="psd-material-actions">
                         <button
                           type="button"
                           className={material.is_representative ? 'is-starred' : ''}
-                          title={material.is_representative ? '取消代表素材' : '设为代表素材'}
+                          title={material.is_representative ? '取消优先参考' : '设为优先参考的关联素材'}
                           onClick={() => void toggleRepresentative(material)}
                         >
                           {material.is_representative ? <StarFilled /> : <StarOutlined />}
                         </button>
-                        <button type="button" title="删除素材" onClick={() => handleDeleteMaterial(material)}>
+                        <button type="button" title="删除关联素材" onClick={() => handleDeleteMaterial(material)}>
                           <DeleteOutlined />
                         </button>
                       </div>
@@ -719,12 +892,106 @@ export const PersonalStyleDetail = () => {
                 </div>
               )}
               <div className="psd-material-tip">
-                <StarFilled /> 代表素材会在分析时优先参考。只添加你认可且确实由本人创作的内容。
+                <StarFilled /> 标为代表的关联素材会在分析时优先参考。只添加你认可且确实由本人创作的内容。
               </div>
+              <button
+                type="button"
+                className="psd-mobile-analyze-button"
+                onClick={handleAnalyze}
+                disabled={!enoughMaterial || analyzing}
+              >
+                <HighlightOutlined />
+                {analyzing
+                  ? '分析中...'
+                  : style.current_version
+                    ? '根据当前关联素材重新分析'
+                    : enoughMaterial
+                      ? '根据当前关联素材生成风格画像'
+                      : `还差 ${Math.max(0, 300 - style.material_char_count)} 字可开始分析`}
+              </button>
             </div>
           </aside>
         </div>
       </main>
+
+      <Modal
+        title="试写当前风格"
+        open={previewOpen}
+        onCancel={() => setPreviewOpen(false)}
+        footer={null}
+        width={760}
+        centered
+        destroyOnHidden={false}
+        className="psd-modal psd-preview-modal"
+      >
+        <div className="psd-preview-modal__intro">
+          <span><ThunderboltOutlined /></span>
+          <p>直接使用页面当前配置，不必先保存。试写不会创建版本，也不会写入历史。</p>
+        </div>
+        <div className="psd-preview-controls">
+          <label>
+            <span>使用场景</span>
+            <Select value={previewScene} options={PREVIEW_SCENE_OPTIONS} onChange={setPreviewScene} />
+          </label>
+          <label>
+            <span>改写方式</span>
+            <Select
+              value={previewStrength}
+              options={PREVIEW_STRENGTH_OPTIONS}
+              onChange={setPreviewStrength}
+            />
+          </label>
+          <button
+            type="button"
+            className="psd-preview-button"
+            disabled={previewing || !previewText.trim() || !summary.trim()}
+            onClick={() => void handlePreview()}
+          >
+            <ThunderboltOutlined /> {previewing ? '试写中...' : previewResult ? '重新试写' : '开始试写'}
+          </button>
+        </div>
+        <div className="psd-preview-workspace">
+          <label>
+            <span>原文</span>
+            <Input.TextArea
+              value={previewText}
+              maxLength={1000}
+              showCount
+              autoSize={{ minRows: 6, maxRows: 10 }}
+              placeholder="输入一小段熟悉的内容，更容易判断这套风格像不像你。"
+              onChange={(event) => setPreviewText(event.target.value)}
+            />
+          </label>
+          <div className="psd-preview-result">
+            <div>
+              <span>试写结果</span>
+              {previewResult && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(previewResult);
+                    message.success('试写结果已复制');
+                  }}
+                >
+                  复制
+                </button>
+              )}
+            </div>
+            {previewing ? (
+              <div className="psd-preview-loading"><Spin size="small" /><span>正在按当前配置试写...</span></div>
+            ) : previewResult ? (
+              <p>{previewResult}</p>
+            ) : (
+              <p className="is-empty">结果会显示在这里，方便你边试边调整。</p>
+            )}
+          </div>
+        </div>
+        <div className={`psd-preview-footnote ${previewIsStale ? 'is-stale' : ''}`}>
+          {previewIsStale
+            ? '页面配置在上次试写后有变化，请重新试写查看最新效果。'
+            : '每次试写会使用 1 次文本转换额度；试写结果仅用于预览。'}
+        </div>
+      </Modal>
 
       <Modal
         title="风格版本历史"
@@ -784,6 +1051,12 @@ export const PersonalStyleDetail = () => {
                           <span>{selectedVersionRules[item.key].join(' · ')}</span>
                         </div>
                       ))}
+                      {selectedVersionRules.structure_rules.map((rule, index) => (
+                        <div key={`structure-${rule.element}-${index}`}>
+                          <strong>结构·{STRUCTURE_ELEMENT_LABELS[rule.element]}</strong>
+                          <span>{rule.instruction}</span>
+                        </div>
+                      ))}
                       {Object.values(selectedVersionRules).every((items) => items.length === 0) && (
                         <p>这个版本没有设置额外规则。</p>
                       )}
@@ -826,12 +1099,12 @@ export const PersonalStyleDetail = () => {
       </Modal>
 
       <Modal
-        title="添加表达素材"
+        title="添加关联素材"
         open={materialOpen}
         onCancel={() => setMaterialOpen(false)}
         onOk={() => void handleAddMaterial()}
         confirmLoading={addingMaterial}
-        okText="添加素材"
+        okText="添加关联素材"
         cancelText="取消"
         width={640}
         centered
@@ -842,14 +1115,14 @@ export const PersonalStyleDetail = () => {
           <button type="button" className={materialMode === 'file' ? 'active' : ''} onClick={() => setMaterialMode('file')}>上传文件</button>
         </div>
         <div className="psd-material-form-grid">
-          <label><span>素材类型</span><Select value={materialType} options={MATERIAL_OPTIONS} onChange={setMaterialType} /></label>
-          <label className="psd-switch-label"><span>代表素材</span><Switch checked={representative} onChange={setRepresentative} /></label>
+          <label><span>关联素材类型</span><Select value={materialType} options={MATERIAL_OPTIONS} onChange={setMaterialType} /></label>
+          <label className="psd-switch-label"><span>优先参考</span><Switch checked={representative} onChange={setRepresentative} /></label>
         </div>
         {materialMode === 'text' ? (
           <div className="psd-text-material-form">
-            <label><span>素材名称</span><Input value={materialName} placeholder="例如：上周的工作周报" maxLength={128} onChange={(event) => setMaterialName(event.target.value)} /></label>
+            <label><span>关联素材名称</span><Input value={materialName} placeholder="例如：上周的工作周报" maxLength={128} onChange={(event) => setMaterialName(event.target.value)} /></label>
             <label>
-              <span>素材正文 <small>{materialContent.length}/15000</small></span>
+              <span>关联素材正文 <small>{materialContent.length}/15000</small></span>
               <Input.TextArea value={materialContent} maxLength={15000} autoSize={{ minRows: 8, maxRows: 12 }} placeholder="粘贴一段你本人写过、并且认可其表达方式的内容..." onChange={(event) => setMaterialContent(event.target.value)} />
             </label>
           </div>
@@ -873,7 +1146,7 @@ export const PersonalStyleDetail = () => {
       </Modal>
 
       <Modal
-        title={viewMaterial?.file_name || '素材内容'}
+        title={viewMaterial?.file_name || '关联素材内容'}
         open={Boolean(viewMaterial)}
         onCancel={() => setViewMaterial(null)}
         footer={null}
@@ -887,7 +1160,7 @@ export const PersonalStyleDetail = () => {
               <span>{materialLabel(viewMaterial.material_type)}</span>
               <span>{formatChars(viewMaterial.char_count)}</span>
               <span>{formatBackendDateTime(viewMaterial.created_at)}</span>
-              {viewMaterial.is_representative && <span className="is-representative"><StarFilled /> 代表素材</span>}
+              {viewMaterial.is_representative && <span className="is-representative"><StarFilled /> 优先参考</span>}
             </div>
             <article>{viewMaterial.content}</article>
           </div>

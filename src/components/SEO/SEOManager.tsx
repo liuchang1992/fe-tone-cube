@@ -10,7 +10,7 @@ interface PageSEO {
 
 const DEFAULT_SEO: PageSEO = {
   title: '语气魔方 - AI 文案改写、文档转换与写作风格分析',
-  description: '语气魔方是一款懂你表达方式的 AI 写作助手，支持文案语气转换、整篇文档改写和个人写作风格分析。',
+  description: '语气魔方是一款懂你表达方式的 AI 写作助手，支持本地脱敏、文案语气转换、整篇文档改写和个人写作风格分析。',
   indexable: true,
 };
 
@@ -23,7 +23,7 @@ const PAGE_SEO: Record<string, PageSEO> = {
   },
   '/privacy': {
     title: '隐私政策 - 语气魔方',
-    description: '了解语气魔方如何处理账号信息、用户文案、上传文档、语料与产品使用数据。',
+    description: '了解语气魔方的本地脱敏流程，以及账号信息、用户文案、上传文档、语料与产品使用数据的处理方式。',
     indexable: true,
   },
   '/login': {

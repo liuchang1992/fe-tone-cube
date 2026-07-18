@@ -22,6 +22,10 @@ const STYLE_MAP: Record<string, string> = {
   polite: '温和礼貌',
   moments: '朋友圈分享',
   short_video: '短视频口播',
+  government: '政务汇报',
+  business: '商务沟通',
+  research: '科研表达',
+  paper: '论文写作',
 };
 
 export const SharePoster: React.FC<SharePosterProps> = ({

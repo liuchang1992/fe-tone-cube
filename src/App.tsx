@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { ConfigProvider, Modal } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
-import { ArrowRightOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons';
+import { ArrowRightOutlined, CloseOutlined, LockOutlined, UserOutlined } from '@ant-design/icons';
 
 import { LoginModal } from '@/components/Auth/LoginModal';
 import { AnalyticsTracker } from '@/components/Analytics/AnalyticsTracker';
@@ -11,8 +11,9 @@ import { DocumentConvertButton } from '@/components/DocumentConvert/DocumentConv
 import { FeedbackWidget } from '@/components/Feedback/FeedbackWidget';
 import { InputArea } from '@/components/InputArea/InputArea';
 import { Layout } from '@/components/Layout/Layout';
-import { CorpusOnboarding } from '@/components/Onboarding/CorpusOnboarding';
+import { PersonalStyleOnboarding } from '@/components/Onboarding/CorpusOnboarding';
 import { OutputArea } from '@/components/OutputArea/OutputArea';
+import { PrivacyReviewModal } from '@/components/PrivacyReview/PrivacyReviewModal';
 import { QuotaAlert } from '@/components/Quota/QuotaAlert';
 import { SEOManager } from '@/components/SEO/SEOManager';
 import { StyleSelector } from '@/components/StyleSelector/StyleSelector';
@@ -27,11 +28,18 @@ import { Privacy } from '@/pages/Privacy';
 import { Register } from '@/pages/Register';
 import { useAppStore } from '@/store/appStore';
 import { trackFeature } from '@/api/analytics';
+import { getReleaseNote } from '@/config/releaseNotes';
+import type { PrivacyMaskResult } from '@/utils/privacyMasking';
+import packageJson from '../package.json';
 import './App.less';
 
-const CONVERT_UPDATE_ID = 'convert-update-2026-07-personal-style';
+const currentReleaseNote = getReleaseNote(packageJson.version);
+const CONVERT_UPDATE_ID = currentReleaseNote
+  ? `convert-update-${currentReleaseNote.version}`
+  : null;
 
 const hasSeenConvertUpdate = () => {
+  if (!CONVERT_UPDATE_ID) return true;
   try {
     return window.localStorage.getItem('seenConvertUpdate') === CONVERT_UPDATE_ID;
   } catch {
@@ -40,6 +48,7 @@ const hasSeenConvertUpdate = () => {
 };
 
 const rememberConvertUpdate = () => {
+  if (!CONVERT_UPDATE_ID) return;
   try {
     window.localStorage.setItem('seenConvertUpdate', CONVERT_UPDATE_ID);
   } catch {
@@ -59,6 +68,8 @@ function HomePage() {
   const [showGuestStyleTip, setShowGuestStyleTip] = useState(false);
   const [showUpdateTip, setShowUpdateTip] = useState(() => !hasSeenConvertUpdate());
   const [updateOpen, setUpdateOpen] = useState(false);
+  const [privacyMode, setPrivacyMode] = useState(false);
+  const [privacyReviewOpen, setPrivacyReviewOpen] = useState(false);
 
   const dismissUpdateTip = () => {
     rememberConvertUpdate();
@@ -70,9 +81,9 @@ function HomePage() {
     setUpdateOpen(true);
   };
 
-  const handleTextConvert = async () => {
+  const runTextConvert = async (privacy?: PrivacyMaskResult) => {
     trackFeature('text_convert');
-    await convert();
+    await convert(privacy ? { requestText: privacy.maskedText, mappings: privacy.mappings } : undefined);
     const conversion = useAppStore.getState();
     if (
       !conversion.user.isLoggedIn
@@ -82,6 +93,24 @@ function HomePage() {
       sessionStorage.setItem('guestPersonalStyleTipShown', '1');
       setShowGuestStyleTip(true);
     }
+  };
+
+  const handleTextConvert = async () => {
+    if (privacyMode) {
+      const { inputText } = useAppStore.getState();
+      if (!inputText.trim() || inputText.length > 2000) {
+        await runTextConvert();
+        return;
+      }
+      setPrivacyReviewOpen(true);
+      return;
+    }
+    await runTextConvert();
+  };
+
+  const confirmPrivacyConvert = async (result: PrivacyMaskResult) => {
+    await runTextConvert(result);
+    if (useAppStore.getState().outputText) setPrivacyReviewOpen(false);
   };
 
   useEffect(() => {
@@ -99,11 +128,16 @@ function HomePage() {
       <main className="content">
         <div className="convert-intro">
           <h1 className="banner-tips">让每一句文案，更像你</h1>
-          {showUpdateTip && (
+          {showUpdateTip && currentReleaseNote && (
             <aside className="convert-update-tip" aria-label="版本更新提示">
-              <span>新</span>
-              <p><strong>改写与个人风格体验已升级</strong>现在可以更清楚地控制怎么改、像谁表达</p>
-              <button type="button" onClick={openUpdate}>查看更新</button>
+              <span className="convert-update-tip__badge">新</span>
+              <p className="convert-update-tip__copy">
+                <strong>{currentReleaseNote.tipTitle}</strong>
+                <span>{currentReleaseNote.tipDescription}</span>
+                <button type="button" className="convert-update-tip__action" onClick={openUpdate}>
+                  查看更新
+                </button>
+              </p>
               <button
                 type="button"
                 className="convert-update-tip__close"
@@ -120,7 +154,27 @@ function HomePage() {
           <div className="agent-panel">
             <div className="container-title">
               <h2 className="title">原始文本</h2>
-              <DocumentConvertButton />
+              <div className="input-title-actions">
+                <button
+                  type="button"
+                  className={`privacy-mode-toggle ${privacyMode ? 'is-active' : ''}`}
+                  aria-pressed={privacyMode}
+                  disabled={isLoading}
+                  title="敏感字段在浏览器本地替换，脱敏后再发送"
+                  onClick={() => {
+                    setPrivacyMode((current) => !current);
+                    setPrivacyReviewOpen(false);
+                  }}
+                >
+                  <span className="privacy-mode-toggle__label">
+                    <LockOutlined /> 本地脱敏
+                  </span>
+                  <span className="privacy-mode-toggle__switch" aria-hidden="true">
+                    <i />
+                  </span>
+                </button>
+                <DocumentConvertButton privacyMode={privacyMode} />
+              </div>
             </div>
             <InputArea />
           </div>
@@ -205,8 +259,8 @@ function HomePage() {
           <p className="ai-disclaimer">语气魔方 · AI 辅助生成内容仅供参考。</p>
         </section>
 
-        <Modal
-          title="这次更新了什么"
+        {currentReleaseNote && <Modal
+          title={currentReleaseNote.modalTitle}
           open={updateOpen}
           onCancel={() => setUpdateOpen(false)}
           footer={null}
@@ -215,27 +269,31 @@ function HomePage() {
           className="convert-update-modal"
         >
           <p className="convert-update-modal__intro">
-            这次主要让改写过程更可控，也让个人风格从一次分析变成可以长期维护的表达资产。
+            {currentReleaseNote.introduction}
           </p>
           <div className="convert-update-list">
-            <section>
-              <b>01</b>
-              <div><strong>新增改写方式</strong><p>选择仅润色、常规改写或结构重组，决定允许怎样调整原文。</p></div>
-            </section>
-            <section>
-              <b>02</b>
-              <div><strong>个人风格更完整</strong><p>支持多套风格、默认风格、手动配置、素材分析、版本历史与恢复。</p></div>
-            </section>
-            <section>
-              <b>03</b>
-              <div><strong>结果更容易验证</strong><p>硬性规则会校验，转换结果可以对比，历史记录会保存使用的配置。</p></div>
-            </section>
+            {currentReleaseNote.items.map((item, index) => (
+              <section key={`${currentReleaseNote.version}-${item.title}`}>
+                <b>{String(index + 1).padStart(2, '0')}</b>
+                <div><strong>{item.title}</strong><p>{item.description}</p></div>
+              </section>
+            ))}
           </div>
           <div className="convert-update-modal__footer">
-            <span>所有功能都可以按需使用，不创建个人风格也能正常转换。</span>
+            <span>{currentReleaseNote.footer}</span>
             <button type="button" onClick={() => setUpdateOpen(false)}>知道了</button>
           </div>
-        </Modal>
+        </Modal>}
+
+        {privacyReviewOpen && (
+          <PrivacyReviewModal
+            open
+            text={useAppStore.getState().inputText}
+            loading={isLoading}
+            onCancel={() => setPrivacyReviewOpen(false)}
+            onConfirm={(result) => void confirmPrivacyConvert(result)}
+          />
+        )}
       </main>
     </div>
   );
@@ -248,9 +306,14 @@ function RouteChangeReset() {
 
   useEffect(() => {
     if (previousPath.current !== location.pathname) {
+      const previousIsPersonalStyle = previousPath.current.startsWith('/personal-styles');
+      const nextIsPersonalStyle = location.pathname.startsWith('/personal-styles');
       const isProtectedDraftRoute =
         (previousPath.current === '/convert' && location.pathname === '/corpus') ||
-        (previousPath.current === '/corpus' && location.pathname === '/convert');
+        (previousPath.current === '/corpus' && location.pathname === '/convert') ||
+        (previousPath.current === '/convert' && nextIsPersonalStyle) ||
+        (previousIsPersonalStyle && location.pathname === '/convert') ||
+        (previousIsPersonalStyle && nextIsPersonalStyle);
 
       if (preserveConversionDraft && isProtectedDraftRoute) {
         if (location.pathname === '/convert') setPreserveConversionDraft(false);
@@ -347,11 +410,11 @@ function App() {
 
 function AppContent() {
   const {
-    setShowCorpusOnboarding,
+    setShowPersonalStyleOnboarding,
     setShowLoginModal,
     setShowQuotaAlert,
     setShowRegisterModal,
-    showCorpusOnboarding,
+    showPersonalStyleOnboarding,
     showLoginModal,
     showQuotaAlert,
     showRegisterModal,
@@ -410,9 +473,9 @@ function AppContent() {
             setShowLoginModal(true);
           }}
         />
-        <CorpusOnboarding
-          isOpen={showCorpusOnboarding}
-          onClose={() => setShowCorpusOnboarding(false)}
+        <PersonalStyleOnboarding
+          isOpen={showPersonalStyleOnboarding}
+          onClose={() => setShowPersonalStyleOnboarding(false)}
         />
         </>
       )}

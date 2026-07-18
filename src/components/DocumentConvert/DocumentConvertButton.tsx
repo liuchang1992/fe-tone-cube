@@ -1,13 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Modal, message } from 'antd';
-import { FileTextOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { FileTextOutlined } from '@ant-design/icons';
 
 import { useAppStore } from '@/store/appStore';
 import { trackFeature } from '@/api/analytics';
 
 const MAX_DOCUMENT_FILE_BYTES = 2_000_000;
 
-export const DocumentConvertButton: React.FC = () => {
+interface DocumentConvertButtonProps {
+  privacyMode?: boolean;
+}
+
+export const DocumentConvertButton: React.FC<DocumentConvertButtonProps> = ({ privacyMode = false }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const {
     convertDocument,
@@ -32,7 +36,9 @@ export const DocumentConvertButton: React.FC = () => {
     && documentRemainingQuota !== null
     && documentRemainingQuota <= 0
   );
-  const documentHint = isDocumentLoading
+  const documentHint = privacyMode
+    ? '本地脱敏第一版仅支持输入框中的文本，暂不支持上传文档'
+    : isDocumentLoading
     ? documentTaskMessage || '文档正在后台转换，可继续使用普通文案转换'
     : isDocumentQuotaExhausted
       ? '文档转换次数已用完，请明天再试或联系管理员增加次数'
@@ -114,6 +120,10 @@ export const DocumentConvertButton: React.FC = () => {
   };
 
   const openFilePicker = () => {
+    if (privacyMode) {
+      message.info('隐私保护当前仅支持输入框文本，请关闭后再导入文档');
+      return;
+    }
     if (!user.isLoggedIn) {
       message.info('请先登录后再上传文档转换');
       setShowLoginModal(true);
@@ -127,26 +137,15 @@ export const DocumentConvertButton: React.FC = () => {
       <div className="document-convert-control">
         <button
           type="button"
-          className="document-convert-btn"
+          className={`document-convert-btn ${privacyMode ? 'is-unavailable' : ''}`}
           onClick={openFilePicker}
           disabled={isDocumentLoading || isDocumentQuotaExhausted}
-          title={isDocumentQuotaExhausted ? '文档转换次数已用完' : undefined}
+          aria-disabled={privacyMode || isDocumentLoading || isDocumentQuotaExhausted}
+          title={documentHint}
         >
           <FileTextOutlined />
-          {isDocumentQuotaExhausted
-            ? '文档次数已用完'
-            : isDocumentLoading
-              ? `文档转换中 ${documentTaskProgress}%`
-              : '上传文档转换'}
+          {isDocumentLoading ? `文档转换中 ${documentTaskProgress}%` : '导入文档'}
         </button>
-        <span
-          className="document-convert-hint"
-          tabIndex={0}
-          aria-label={documentHint}
-        >
-          <InfoCircleOutlined />
-          <span className="document-convert-tooltip">{documentHint}</span>
-        </span>
       </div>
       <input
         ref={fileInputRef}

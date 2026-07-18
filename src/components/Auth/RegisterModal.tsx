@@ -25,7 +25,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
   onClose,
   onSwitchToLogin,
 }) => {
-  const { fetchQuota, setShowCorpusOnboarding, setUser } = useAppStore();
+  const { fetchQuota, setShowPersonalStyleOnboarding, setUser } = useAppStore();
   const usernameInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
@@ -96,7 +96,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
 
       message.success('注册成功，已自动登录');
       handleClose();
-      window.setTimeout(() => setShowCorpusOnboarding(true), 350);
+      window.setTimeout(() => setShowPersonalStyleOnboarding(true), 350);
     } catch (err: unknown) {
       if (registrationCompleted) {
         message.warning('注册成功，但自动登录失败，请手动登录');

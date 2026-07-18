@@ -11,6 +11,7 @@ import {
   type DocumentConvertResponse,
 } from '@/api/documentConvert';
 import { getStoredToken, getStoredUsername } from '@/api/auth';
+import { restoreSensitiveText, type PrivacyMapping } from '@/utils/privacyMasking';
 
 const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error ? error.message : fallback;
@@ -50,6 +51,11 @@ interface ConversionContext {
   rewriteStrength: RewriteStrength;
 }
 
+interface PrivacyConversionOptions {
+  requestText: string;
+  mappings: PrivacyMapping[];
+}
+
 interface AppState {
   inputText: string;
   outputText: string;
@@ -59,6 +65,8 @@ interface AppState {
   selectedPersonalStyleVersion: number | null;
   selectedRewriteStrength: RewriteStrength;
   lastPersonalConversion: ConversionContext | null;
+  lastConversionPrivacyCount: number;
+  lastConversionPrivacyMode: boolean;
   isLoading: boolean;
   isDocumentLoading: boolean;
   documentTaskProgress: number;
@@ -71,7 +79,7 @@ interface AppState {
   user: UserState;
   showLoginModal: boolean;
   showRegisterModal: boolean;
-  showCorpusOnboarding: boolean;
+  showPersonalStyleOnboarding: boolean;
   preserveConversionDraft: boolean;
   showQuotaAlert: boolean;
   
@@ -84,11 +92,11 @@ interface AppState {
   setUser: (user: UserState) => void;
   setShowLoginModal: (show: boolean) => void;
   setShowRegisterModal: (show: boolean) => void;
-  setShowCorpusOnboarding: (show: boolean) => void;
+  setShowPersonalStyleOnboarding: (show: boolean) => void;
   setPreserveConversionDraft: (preserve: boolean) => void;
   setShowQuotaAlert: (show: boolean) => void;
   logout: () => void;
-  convert: () => Promise<void>;
+  convert: (privacy?: PrivacyConversionOptions) => Promise<void>;
   convertDocument: (file: File) => Promise<DocumentConvertResponse | null>;
   resumeDocumentConversion: () => Promise<void>;
   setDocumentPreviewOpen: (open: boolean) => void;
@@ -105,6 +113,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectedPersonalStyleVersion: null,
   selectedRewriteStrength: 'standard',
   lastPersonalConversion: null,
+  lastConversionPrivacyCount: 0,
+  lastConversionPrivacyMode: false,
   isLoading: false,
   isDocumentLoading: false,
   documentTaskProgress: 0,
@@ -120,12 +130,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   showLoginModal: false,
   showRegisterModal: false,
-  showCorpusOnboarding: false,
+  showPersonalStyleOnboarding: false,
   preserveConversionDraft: false,
   showQuotaAlert: false,
 
   setInput: (text) => set({ inputText: text }),
-  setOutput: (text) => set({ outputText: text, lastPersonalConversion: null }),
+  setOutput: (text) => set({
+    outputText: text,
+    lastPersonalConversion: null,
+    lastConversionPrivacyCount: 0,
+    lastConversionPrivacyMode: false,
+  }),
   setStyle: (style) => set({ selectedStyle: style }),
   setPersonalStyle: (styleId, name = '', version = null) => set({
     selectedPersonalStyleId: styleId,
@@ -137,7 +152,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setUser: (user) => set({ user }),
   setShowLoginModal: (show) => set({ showLoginModal: show }),
   setShowRegisterModal: (show) => set({ showRegisterModal: show }),
-  setShowCorpusOnboarding: (show) => set({ showCorpusOnboarding: show }),
+  setShowPersonalStyleOnboarding: (show) => set({ showPersonalStyleOnboarding: show }),
   setPreserveConversionDraft: (preserve) => set({ preserveConversionDraft: preserve }),
   setShowQuotaAlert: (show) => set({ showQuotaAlert: show }),
   setDocumentPreviewOpen: (open) => set({ isDocumentPreviewOpen: open }),
@@ -164,12 +179,14 @@ export const useAppStore = create<AppState>((set, get) => ({
       selectedPersonalStyleName: '',
       selectedPersonalStyleVersion: null,
       lastPersonalConversion: null,
+      lastConversionPrivacyCount: 0,
+      lastConversionPrivacyMode: false,
     });
     // 可选：清空后重新获取访客配额
     setTimeout(() => get().fetchQuota(), 100);
   },
 
-  convert: async () => {
+  convert: async (privacy) => {
     const {
       inputText,
       selectedStyle,
@@ -188,20 +205,40 @@ export const useAppStore = create<AppState>((set, get) => ({
       message.warning('文本长度不能超过 2000 字');
       return;
     }
+    if (privacy && privacy.requestText.length > 2000) {
+      set({ error: '脱敏后的文本超过 2000 字，请适当缩短后重试' });
+      message.warning('脱敏后的文本超过 2000 字，请适当缩短后重试');
+      return;
+    }
 
-    set({ isLoading: true, error: null, outputText: '', lastPersonalConversion: null });
+    set({
+      isLoading: true,
+      error: null,
+      outputText: '',
+      lastPersonalConversion: null,
+      lastConversionPrivacyCount: 0,
+      lastConversionPrivacyMode: false,
+    });
 
     try {
       const conversion = await convertTextDetailed({
-        text: inputText,
+        text: privacy?.requestText || inputText,
         style: selectedStyle,
         ...(selectedPersonalStyleId ? { personal_style_id: selectedPersonalStyleId } : {}),
         rewrite_strength: selectedRewriteStrength,
+        ...(privacy ? { privacy_mode: true } : {}),
       });
+      const restoredResult = privacy
+        ? restoreSensitiveText(conversion.result, privacy.mappings)
+        : conversion.result;
       set({
-        outputText: conversion.result,
+        outputText: restoredResult,
         isLoading: false,
-        lastPersonalConversion: selectedPersonalStyleId ? {
+        lastConversionPrivacyCount: privacy
+          ? privacy.mappings.reduce((total, mapping) => total + mapping.occurrences, 0)
+          : 0,
+        lastConversionPrivacyMode: Boolean(privacy),
+        lastPersonalConversion: selectedPersonalStyleId && !privacy ? {
           inputText,
           style: selectedStyle,
           personalStyleId: selectedPersonalStyleId,
@@ -342,6 +379,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           selectedPersonalStyleName: '',
           selectedPersonalStyleVersion: null,
           lastPersonalConversion: null,
+          lastConversionPrivacyCount: 0,
+          lastConversionPrivacyMode: false,
         });
       }
     }
@@ -354,6 +393,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       error: null,
       isLoading: false,
       lastPersonalConversion: null,
+      lastConversionPrivacyCount: 0,
+      lastConversionPrivacyMode: false,
     });
   },
 }));

@@ -138,6 +138,86 @@
       }
     }
 
+    .privacy-protection-summary {
+      margin: 0 0 28px;
+      padding: 20px;
+      color: #315f57;
+      background: linear-gradient(135deg, #effbf8, #f8fffd);
+      border: 1px solid #cdebe4;
+      border-radius: 14px;
+
+      > ul {
+        margin: 17px 0 0 20px;
+        color: #476c65;
+      }
+
+      > p {
+        margin: 14px 0 0;
+        padding-top: 13px;
+        color: #7a6251;
+        font-size: 13px;
+        border-top: 1px solid #d7eee8;
+      }
+    }
+
+    .privacy-protection-summary__heading {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 17px;
+
+      span {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        color: #0f766e;
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      strong {
+        color: #174c43;
+        font-size: 18px;
+      }
+    }
+
+    .privacy-protection-summary__steps {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 9px;
+
+      > div {
+        min-width: 0;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid #d7eee8;
+        border-radius: 10px;
+      }
+
+      b,
+      strong,
+      span {
+        display: block;
+      }
+
+      b {
+        color: #14b8a6;
+        font-size: 11px;
+      }
+
+      strong {
+        margin: 5px 0 3px;
+        color: #285b52;
+        font-size: 13px;
+      }
+
+      span {
+        color: #78918b;
+        font-size: 11px;
+        line-height: 1.45;
+      }
+    }
+
     h2.ant-typography {
       font-size: 19px;
       font-weight: 600;
@@ -252,8 +332,30 @@
     .privacy-content {
       font-size: 14px;
 
+      ul,
+      ol {
+        margin-left: 0;
+        padding-inline-start: 16px;
+
+        ul,
+        ol {
+          margin-left: 0;
+          padding-inline-start: 14px;
+        }
+      }
+
+      .privacy-protection-summary > ul {
+        margin-left: 0;
+        padding-inline-start: 16px;
+      }
+
+      .privacy-protection-summary__steps {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       h2.ant-typography {
         font-size: 17px !important;
+        padding-left: 10px;
       }
     }
 
@@ -280,6 +382,16 @@
       font-size: 12px;
       gap: 8px;
       flex-wrap: wrap;
+    }
+
+    .privacy-content {
+      .privacy-protection-summary {
+        padding: 16px;
+      }
+
+      .privacy-protection-summary__steps {
+        grid-template-columns: 1fr;
+      }
     }
   }
 }

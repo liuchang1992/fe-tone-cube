@@ -84,7 +84,7 @@ export const Landing: FC = () => {
           </div>
           <div className="landing-trust-points" aria-label="产品特点">
             <span><CheckCircleFilled /> 文案不用于模型训练</span>
-            <span><CheckCircleFilled /> 支持文本与长文档</span>
+            <span><CheckCircleFilled /> 敏感字段可先本地脱敏</span>
             <span><CheckCircleFilled /> 个人约束强制校验</span>
           </div>
         </div>
@@ -105,7 +105,7 @@ export const Landing: FC = () => {
             <div className="hero-result-card__line hero-result-card__line--long" />
             <div className="hero-result-card__line" />
             <div className="hero-result-card__styles">
-              <i>邮件场景</i><i>常规改写</i><i>个人风格</i>
+              <i>邮件场景</i><i>常规改写</i><i>个人风格</i><i>本地脱敏</i>
             </div>
           </div>
         </div>
@@ -126,6 +126,42 @@ export const Landing: FC = () => {
               <span>{capability.meta}</span>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="landing-section landing-privacy">
+        <div className="landing-privacy__copy">
+          <span className="landing-privacy__eyebrow">
+            <SafetyCertificateOutlined /> 隐私保护
+          </span>
+          <h2>敏感内容，先在本地处理再转换</h2>
+          <p>
+            输入政务、商务或科研内容时，可先在浏览器内识别人名、联系方式和自定义敏感词。
+            由你确认实际发送内容后，再提交脱敏文本进行转换。
+          </p>
+          <div className="landing-privacy__points">
+            <span><CheckCircleFilled /> 替换关系仅留在当前页面内存</span>
+            <span><CheckCircleFilled /> 隐私转换不写入历史与结果缓存</span>
+            <span><CheckCircleFilled /> 本机词库不随账号同步</span>
+          </div>
+          <button type="button" onClick={() => navigate('/privacy')}>
+            查看隐私处理说明 <ArrowRightOutlined />
+          </button>
+        </div>
+
+        <div className="landing-privacy__flow" aria-label="本地脱敏转换流程">
+          {[
+            ['01', '浏览器本地识别', '找出可能的敏感字段'],
+            ['02', '由你检查确认', '预览实际发送的脱敏文本'],
+            ['03', '提交脱敏内容', '已确认字段不随请求发送'],
+            ['04', '浏览器本地还原', '把转换结果恢复为原始字段'],
+          ].map(([number, title, description]) => (
+            <article key={number}>
+              <strong>{number}</strong>
+              <div><h3>{title}</h3><p>{description}</p></div>
+            </article>
+          ))}
+          <small>当前支持输入框中的文本内容，上传文档暂不支持本地脱敏。</small>
         </div>
       </section>
 
