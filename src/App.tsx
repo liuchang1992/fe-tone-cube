@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { ConfigProvider, Modal } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
-import { ArrowRightOutlined, CloseOutlined, LockOutlined, UserOutlined } from '@ant-design/icons';
+import { ArrowRightOutlined, CloseOutlined, LockOutlined, ReloadOutlined, ToolOutlined, UserOutlined } from '@ant-design/icons';
 
 import { LoginModal } from '@/components/Auth/LoginModal';
 import { AnalyticsTracker } from '@/components/Analytics/AnalyticsTracker';
@@ -28,6 +28,11 @@ import { Privacy } from '@/pages/Privacy';
 import { Register } from '@/pages/Register';
 import { useAppStore } from '@/store/appStore';
 import { trackFeature } from '@/api/analytics';
+import {
+  getMaintenanceNotice,
+  subscribeMaintenanceNotice,
+  type MaintenanceNotice,
+} from '@/api/maintenance';
 import { getReleaseNote } from '@/config/releaseNotes';
 import type { PrivacyMaskResult } from '@/utils/privacyMasking';
 import packageJson from '../package.json';
@@ -419,15 +424,40 @@ function AppContent() {
     showQuotaAlert,
     showRegisterModal,
   } = useAppStore();
+  const [maintenanceNotice, setMaintenanceNotice] = useState<MaintenanceNotice | null>(
+    getMaintenanceNotice,
+  );
   const isMobileDevice = useIsMobileDevice();
   const mobileGuideEnabled = import.meta.env.VITE_MOBILE_GUIDE_ENABLED === 'true';
   const location = useLocation();
   const isMobileFriendlyPage = location.pathname === '/' || location.pathname === '/privacy';
 
+  useEffect(() => subscribeMaintenanceNotice(setMaintenanceNotice), []);
+
   return (
     <>
       <AnalyticsTracker />
       <SEOManager />
+      <Modal
+        title={<span className="maintenance-modal__title"><ToolOutlined /> 系统升级中</span>}
+        open={Boolean(maintenanceNotice)}
+        closable={false}
+        maskClosable={false}
+        keyboard={false}
+        centered
+        width={420}
+        className="maintenance-modal"
+        footer={(
+          <button type="button" onClick={() => window.location.reload()}>
+            <ReloadOutlined /> 稍后刷新
+          </button>
+        )}
+      >
+        <p>{maintenanceNotice?.message}</p>
+        {Boolean(maintenanceNotice?.retryAfter) && (
+          <span>预计约 {Math.max(1, Math.ceil((maintenanceNotice?.retryAfter || 0) / 60))} 分钟后恢复</span>
+        )}
+      </Modal>
       {mobileGuideEnabled && isMobileDevice && !isMobileFriendlyPage ? (
         <MobileDeviceGuide />
       ) : (

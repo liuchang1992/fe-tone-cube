@@ -1,5 +1,10 @@
 import axios from 'axios';
 import { getStoredToken } from './auth';
+import {
+  MaintenanceError,
+  publishMaintenanceNotice,
+  type MaintenanceNotice,
+} from './maintenance';
 import { getVisitorId } from '@/utils/visitorId';
 
 const apiClient = axios.create({
@@ -24,6 +29,21 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (res) => res,
   (error) => {
+    const responseData = error.response?.data as {
+      code?: string;
+      message?: string;
+      retry_after?: number;
+    } | undefined;
+    if (error.response?.status === 503 && responseData?.code === 'maintenance') {
+      const notice: MaintenanceNotice = {
+        message: responseData.message || '系统正在升级，请稍后再试',
+        retryAfter: Number.isFinite(responseData.retry_after)
+          ? Math.max(0, Number(responseData.retry_after))
+          : 0,
+      };
+      publishMaintenanceNotice(notice);
+      return Promise.reject(new MaintenanceError(notice));
+    }
     // 如果是401且不是登录/注册接口，清除本地token
     if (error.response?.status === 401) {
       const url = error.config?.url || '';

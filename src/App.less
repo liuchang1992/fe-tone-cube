@@ -714,6 +714,47 @@
   background: #7c3aed;
 }
 
+.maintenance-modal {
+  .ant-modal-content { padding: 24px; border-radius: 16px; }
+  .ant-modal-body {
+    padding: 8px 0 4px;
+
+    p { margin: 0; color: #374151; font-size: 14px; line-height: 1.75; }
+    > span { display: block; margin-top: 7px; color: #8b93a1; font-size: 11px; }
+  }
+  .ant-modal-footer {
+    margin-top: 20px;
+
+    button {
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 15px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      background: #7c3aed;
+      border-radius: 9px;
+    }
+  }
+}
+
+.maintenance-modal__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #312e81;
+  font-weight: 850;
+
+  .anticon { color: #7c3aed; }
+}
+
+// The global maintenance dialog is the single source of feedback. Suppress
+// per-request error toasts from pages whose in-flight requests fail together.
+.maintenance-mode-active .ant-message { display: none; }
+
 @media (max-width: 960px) {
   .content {
     width: min(680px, calc(100vw - 32px));
