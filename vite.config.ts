@@ -7,7 +7,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
 const createSeoFilesPlugin = (siteUrl: string): Plugin => ({
   name: 'tone-cube-seo-files',
   generateBundle() {
-    const privatePaths = ['/history', '/corpus', '/pay', '/login', '/register'];
+    const privatePaths = ['/history', '/corpus', '/personal-styles', '/pay', '/login', '/register'];
     const robotsLines = [
       'User-agent: *',
       'Allow: /',

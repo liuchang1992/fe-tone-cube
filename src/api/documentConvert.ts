@@ -1,4 +1,5 @@
 import apiClient from './client';
+import type { RewriteStrength } from './convert';
 
 export interface DocumentConvertResponse {
   success: boolean;
@@ -30,10 +31,14 @@ export interface DocumentTaskStatusResponse {
 export const createDocumentConvertTask = async (
   file: File,
   style: string,
+  personalStyleId?: number | null,
+  rewriteStrength: RewriteStrength = 'standard',
 ): Promise<DocumentTaskCreateResponse> => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('style', style);
+  formData.append('rewrite_strength', rewriteStrength);
+  if (personalStyleId) formData.append('personal_style_id', String(personalStyleId));
 
   const { data } = await apiClient.post<DocumentTaskCreateResponse>('/api/document-convert', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },

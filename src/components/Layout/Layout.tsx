@@ -5,7 +5,8 @@ import { useAppStore } from '@/store/appStore';
 
 export const Layout: React.FC = () => {
     const location = useLocation();
-    const showMobileNavigation = ['/convert', '/history', '/corpus', '/pay'].includes(location.pathname);
+    const showMobileNavigation = ['/convert', '/history', '/corpus', '/pay'].includes(location.pathname)
+      || location.pathname.startsWith('/personal-styles');
     const {
         setShowLoginModal,
         setShowRegisterModal,

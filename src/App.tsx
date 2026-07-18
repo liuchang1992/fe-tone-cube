@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, Modal } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
-import { ArrowRightOutlined } from '@ant-design/icons';
+import { ArrowRightOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons';
 
 import { LoginModal } from '@/components/Auth/LoginModal';
 import { AnalyticsTracker } from '@/components/Analytics/AnalyticsTracker';
@@ -21,18 +21,67 @@ import { History } from '@/pages/History';
 import { Landing } from '@/pages/Landing';
 import { Login } from '@/pages/Login';
 import { Pay } from '@/pages/Pay';
+import { PersonalStyleDetail } from '@/pages/PersonalStyleDetail';
+import { PersonalStyles } from '@/pages/PersonalStyles';
 import { Privacy } from '@/pages/Privacy';
 import { Register } from '@/pages/Register';
 import { useAppStore } from '@/store/appStore';
 import { trackFeature } from '@/api/analytics';
 import './App.less';
 
-function HomePage() {
-  const { convert, fetchQuota, isLoading, user } = useAppStore();
+const CONVERT_UPDATE_ID = 'convert-update-2026-07-personal-style';
 
-  const handleTextConvert = () => {
+const hasSeenConvertUpdate = () => {
+  try {
+    return window.localStorage.getItem('seenConvertUpdate') === CONVERT_UPDATE_ID;
+  } catch {
+    return false;
+  }
+};
+
+const rememberConvertUpdate = () => {
+  try {
+    window.localStorage.setItem('seenConvertUpdate', CONVERT_UPDATE_ID);
+  } catch {
+    // Storage may be unavailable in private browsing; the prompt remains dismissible this session.
+  }
+};
+
+function HomePage() {
+  const {
+    convert,
+    fetchQuota,
+    isLoading,
+    setShowLoginModal,
+    setShowRegisterModal,
+    user,
+  } = useAppStore();
+  const [showGuestStyleTip, setShowGuestStyleTip] = useState(false);
+  const [showUpdateTip, setShowUpdateTip] = useState(() => !hasSeenConvertUpdate());
+  const [updateOpen, setUpdateOpen] = useState(false);
+
+  const dismissUpdateTip = () => {
+    rememberConvertUpdate();
+    setShowUpdateTip(false);
+  };
+
+  const openUpdate = () => {
+    dismissUpdateTip();
+    setUpdateOpen(true);
+  };
+
+  const handleTextConvert = async () => {
     trackFeature('text_convert');
-    void convert();
+    await convert();
+    const conversion = useAppStore.getState();
+    if (
+      !conversion.user.isLoggedIn
+      && conversion.outputText
+      && !sessionStorage.getItem('guestPersonalStyleTipShown')
+    ) {
+      sessionStorage.setItem('guestPersonalStyleTipShown', '1');
+      setShowGuestStyleTip(true);
+    }
   };
 
   useEffect(() => {
@@ -48,7 +97,24 @@ function HomePage() {
   return (
     <div className="home-page">
       <main className="content">
-        <h1 className="banner-tips">让每一句文案，更像你</h1>
+        <div className="convert-intro">
+          <h1 className="banner-tips">让每一句文案，更像你</h1>
+          {showUpdateTip && (
+            <aside className="convert-update-tip" aria-label="版本更新提示">
+              <span>新</span>
+              <p><strong>改写与个人风格体验已升级</strong>现在可以更清楚地控制怎么改、像谁表达</p>
+              <button type="button" onClick={openUpdate}>查看更新</button>
+              <button
+                type="button"
+                className="convert-update-tip__close"
+                aria-label="关闭版本更新提示"
+                onClick={dismissUpdateTip}
+              >
+                <CloseOutlined />
+              </button>
+            </aside>
+          )}
+        </div>
 
         <section className="agent-context" aria-label="文字语气转换">
           <div className="agent-panel">
@@ -84,12 +150,45 @@ function HomePage() {
           </div>
         </section>
 
+        {!user.isLoggedIn && showGuestStyleTip && (
+          <aside className="guest-style-tip" aria-label="登录创建个人风格提示">
+            <span className="guest-style-tip__icon"><UserOutlined /></span>
+            <div className="guest-style-tip__copy">
+              <strong>想让下一次转换更像你？</strong>
+              <p>登录后可以创建多套个人风格，让魔方学习你的用词、句式和表达习惯。</p>
+            </div>
+            <div className="guest-style-tip__actions">
+              <button
+                type="button"
+                className="is-primary"
+                onClick={() => { setShowGuestStyleTip(false); setShowRegisterModal(true); }}
+              >
+                免费注册
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowGuestStyleTip(false); setShowLoginModal(true); }}
+              >
+                已有账号，登录
+              </button>
+            </div>
+            <button
+              type="button"
+              className="guest-style-tip__close"
+              aria-label="关闭提示"
+              onClick={() => setShowGuestStyleTip(false)}
+            >
+              <CloseOutlined />
+            </button>
+          </aside>
+        )}
+
         <section className="quick-transform" aria-label="快速转换模板">
           <p className="quick-title">使用场景</p>
           <StyleSelector />
           <div className="transform-btn">
             <button
-              onClick={handleTextConvert}
+              onClick={() => void handleTextConvert()}
               disabled={isLoading}
               className="btn"
             >
@@ -105,6 +204,38 @@ function HomePage() {
           </div>
           <p className="ai-disclaimer">语气魔方 · AI 辅助生成内容仅供参考。</p>
         </section>
+
+        <Modal
+          title="这次更新了什么"
+          open={updateOpen}
+          onCancel={() => setUpdateOpen(false)}
+          footer={null}
+          width={560}
+          centered
+          className="convert-update-modal"
+        >
+          <p className="convert-update-modal__intro">
+            这次主要让改写过程更可控，也让个人风格从一次分析变成可以长期维护的表达资产。
+          </p>
+          <div className="convert-update-list">
+            <section>
+              <b>01</b>
+              <div><strong>新增改写方式</strong><p>选择仅润色、常规改写或结构重组，决定允许怎样调整原文。</p></div>
+            </section>
+            <section>
+              <b>02</b>
+              <div><strong>个人风格更完整</strong><p>支持多套风格、默认风格、手动配置、素材分析、版本历史与恢复。</p></div>
+            </section>
+            <section>
+              <b>03</b>
+              <div><strong>结果更容易验证</strong><p>硬性规则会校验，转换结果可以对比，历史记录会保存使用的配置。</p></div>
+            </section>
+          </div>
+          <div className="convert-update-modal__footer">
+            <span>所有功能都可以按需使用，不创建个人风格也能正常转换。</span>
+            <button type="button" onClick={() => setUpdateOpen(false)}>知道了</button>
+          </div>
+        </Modal>
       </main>
     </div>
   );
@@ -248,6 +379,8 @@ function AppContent() {
             <Route path="/pay" element={<Pay />} />
             <Route path="/history" element={<History />} />
             <Route path="/corpus" element={<Corpus />} />
+            <Route path="/personal-styles" element={<PersonalStyles />} />
+            <Route path="/personal-styles/:styleId" element={<PersonalStyleDetail />} />
             <Route path="/privacy" element={<Privacy />} />
           </Route>
         </Routes>

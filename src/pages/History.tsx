@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Modal, Pagination, message } from 'antd';
+import { Modal, Pagination, Spin, message } from 'antd';
 import {
   CheckOutlined,
   CopyOutlined,
@@ -8,20 +8,28 @@ import {
   DownloadOutlined,
   DownOutlined,
   FileTextOutlined,
-  UpOutlined,
+  SwapOutlined,
 } from '@ant-design/icons';
 
 import {
   type HistoryItem,
   clearAllHistory,
   deleteHistoryItem,
+  getHistoryComparison,
   getHistoryList,
+  saveComparisonPreference,
 } from '@/api/history';
 import { trackFeature } from '@/api/analytics';
 import { PageHeader } from '@/components/PageHeader/PageHeader';
 import { useAppStore } from '@/store/appStore';
 import { formatBackendDateTime } from '@/utils/dateTime';
 import './History.less';
+
+const STRENGTH_LABELS = {
+  light: '仅润色',
+  standard: '常规改写',
+  deep: '结构重组',
+} as const;
 
 export const History: React.FC = () => {
   const navigate = useNavigate();
@@ -33,20 +41,12 @@ export const History: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
+  const [comparisonOpen, setComparisonOpen] = useState(false);
+  const [comparisonLoading, setComparisonLoading] = useState(false);
+  const [comparisonItems, setComparisonItems] = useState<HistoryItem[]>([]);
+  const [comparisonPreference, setComparisonPreference] = useState<'personal' | 'baseline' | null>(null);
 
-  useEffect(() => {
-    if (!user.isLoggedIn) {
-      navigate('/');
-    }
-  }, [navigate, user.isLoggedIn]);
-
-  useEffect(() => {
-    if (user.isLoggedIn) {
-      fetchHistory(currentPage, pageSize);
-    }
-  }, [user.isLoggedIn, currentPage, pageSize]);
-
-  const fetchHistory = async (page: number, size: number) => {
+  const fetchHistory = useCallback(async (page: number, size: number) => {
     setLoading(true);
     try {
       const offset = (page - 1) * size;
@@ -59,7 +59,19 @@ export const History: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!user.isLoggedIn) {
+      navigate('/');
+    }
+  }, [navigate, user.isLoggedIn]);
+
+  useEffect(() => {
+    if (!user.isLoggedIn) return;
+    const timer = window.setTimeout(() => void fetchHistory(currentPage, pageSize), 0);
+    return () => window.clearTimeout(timer);
+  }, [user.isLoggedIn, currentPage, pageSize, fetchHistory]);
 
   const deleteHistory = (item: HistoryItem) => {
     Modal.confirm({
@@ -151,6 +163,43 @@ export const History: React.FC = () => {
     setExpandedId((current) => (current === id ? null : id));
   };
 
+  const openHistoryComparison = async (comparisonGroupId: string) => {
+    setComparisonOpen(true);
+    setComparisonLoading(true);
+    setComparisonItems([]);
+    try {
+      const items = await getHistoryComparison(comparisonGroupId);
+      setComparisonItems(items);
+      setComparisonPreference(items[0]?.comparison_preference || null);
+    } catch (error) {
+      setComparisonOpen(false);
+      message.error(error instanceof Error ? error.message : '对比记录加载失败');
+    } finally {
+      setComparisonLoading(false);
+    }
+  };
+
+  const updateHistoryComparisonPreference = async (preference: 'personal' | 'baseline') => {
+    const comparisonGroupId = comparisonItems[0]?.comparison_group_id;
+    if (!comparisonGroupId || comparisonPreference) return;
+    try {
+      await saveComparisonPreference(comparisonGroupId, preference);
+      setComparisonPreference(preference);
+      setComparisonItems((items) => items.map((item) => ({ ...item, comparison_preference: preference })));
+      setHistory((items) => items.map((item) => (
+        item.comparison_group_id === comparisonGroupId
+          ? { ...item, comparison_preference: preference }
+          : item
+      )));
+      message.success('已记录你的选择，提交后不可修改');
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '反馈保存失败');
+    }
+  };
+
+  const baselineComparison = comparisonItems.find((item) => item.comparison_role === 'baseline');
+  const personalComparison = comparisonItems.find((item) => item.comparison_role === 'personal');
+
   return (
     <div className="history-page">
       <main className="history-wrapper">
@@ -195,7 +244,12 @@ export const History: React.FC = () => {
 
                 return (
                   <article key={item.id} className={`history-card ${expanded ? 'history-card--expanded' : ''}`}>
-                    <button className="history-card-summary" onClick={() => toggleExpanded(item.id)}>
+                    <button
+                      className="history-card-summary"
+                      onClick={() => toggleExpanded(item.id)}
+                      aria-expanded={expanded}
+                      aria-controls={`history-card-body-${item.id}`}
+                    >
                       <div className="history-summary-main">
                         <div className="history-meta">
                           <span className="history-time">
@@ -205,21 +259,35 @@ export const History: React.FC = () => {
                             {item.conversion_type === 'document' ? '文档' : '文案'}
                           </span>
                           <span className="style-badge">{item.style}</span>
-                          {item.file_name && (
-                            <span className="history-file-name" title={item.file_name}>
-                              <FileTextOutlined /> {item.file_name}
-                            </span>
-                          )}
+                          <span className="history-context-meta">
+                            <span>{STRENGTH_LABELS[item.rewrite_strength] || '常规改写'}</span>
+                            {item.personal_style_name && (
+                              <span>
+                                个人风格：{item.personal_style_name}
+                                {item.personal_style_version ? ` v${item.personal_style_version}` : ''}
+                              </span>
+                            )}
+                            {item.comparison_role && (
+                              <span>
+                                {item.comparison_role === 'baseline' ? '对比基准' : '对比个人版'}
+                              </span>
+                            )}
+                            {item.file_name && (
+                              <span className="history-file-name" title={item.file_name}>
+                                {item.file_name}
+                              </span>
+                            )}
+                          </span>
                         </div>
                         <p className="history-preview">{item.output_text}</p>
                       </div>
                       <span className="expand-indicator">
-                        {expanded ? <UpOutlined /> : <DownOutlined />}
+                        <DownOutlined />
                       </span>
                     </button>
 
                     {expanded && (
-                      <div className="history-card-body">
+                      <div id={`history-card-body-${item.id}`} className="history-card-body">
                         <div className="history-actions">
                           <button
                             onClick={() => copyText(item.output_text, item.id)}
@@ -234,6 +302,14 @@ export const History: React.FC = () => {
                               下载结果
                             </button>
                           )}
+                          {item.comparison_group_id && item.comparison_role && (
+                            <button
+                              onClick={() => void openHistoryComparison(item.comparison_group_id as string)}
+                              className="compare-history-btn"
+                            >
+                              <SwapOutlined /> 查看对比
+                            </button>
+                          )}
                           <button onClick={() => deleteHistory(item)} className="delete-btn">
                             <DeleteOutlined />
                             删除
@@ -246,7 +322,15 @@ export const History: React.FC = () => {
                             <p>{item.input_text}</p>
                           </div>
                           <div className="text-block result-block">
-                            <h3>完整转换结果</h3>
+                            <h3>
+                              完整转换结果
+                              {item.personal_style_name && (
+                                <small>
+                                  · {item.personal_style_name}
+                                  {item.personal_style_version ? ` v${item.personal_style_version}` : ''}
+                                </small>
+                              )}
+                            </h3>
                             <p>{item.output_text}</p>
                           </div>
                         </div>
@@ -271,6 +355,66 @@ export const History: React.FC = () => {
           </section>
         )}
       </main>
+
+      <Modal
+        title="历史效果对比"
+        open={comparisonOpen}
+        onCancel={() => !comparisonLoading && setComparisonOpen(false)}
+        width={960}
+        centered
+        className="conversion-compare-modal"
+        footer={null}
+      >
+        {comparisonLoading ? (
+          <div className="conversion-compare-loading"><Spin /><span>正在加载对比记录...</span></div>
+        ) : baselineComparison && personalComparison ? (
+          <div className="conversion-compare-grid">
+            <section>
+              <div className="conversion-compare-heading">
+                <div><span>基准</span><strong>仅使用场景语气</strong></div>
+                <small>{baselineComparison.output_text.length} 字</small>
+              </div>
+              <article>{baselineComparison.output_text}</article>
+              <div className="conversion-compare-actions">
+                <button type="button" onClick={() => void copyText(baselineComparison.output_text, baselineComparison.id)}>复制结果</button>
+              </div>
+            </section>
+            <section className="is-personal">
+              <div className="conversion-compare-heading">
+                <div>
+                  <span>个人风格</span>
+                  <strong>{personalComparison.personal_style_name || '个人风格'}</strong>
+                  {personalComparison.personal_style_version && <small>v{personalComparison.personal_style_version}</small>}
+                </div>
+                <small>{personalComparison.output_text.length} 字</small>
+              </div>
+              <article>{personalComparison.output_text}</article>
+              <div className="conversion-compare-actions">
+                <button type="button" onClick={() => void copyText(personalComparison.output_text, personalComparison.id)}>复制结果</button>
+              </div>
+            </section>
+            <div className="conversion-compare-feedback">
+              <span>{comparisonPreference ? '偏好已提交，不可修改' : '哪一个效果更好？'}</span>
+              <button
+                type="button"
+                className={comparisonPreference === 'baseline' ? 'active' : ''}
+                disabled={comparisonPreference !== null}
+                onClick={() => void updateHistoryComparisonPreference('baseline')}
+              >
+                默认效果更好
+              </button>
+              <button
+                type="button"
+                className={comparisonPreference === 'personal' ? 'active' : ''}
+                disabled={comparisonPreference !== null}
+                onClick={() => void updateHistoryComparisonPreference('personal')}
+              >
+                个人风格更好
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
     </div>
   );
 };

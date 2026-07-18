@@ -18,7 +18,7 @@ export const QuotaAlert: React.FC<QuotaAlertProps> = ({ isOpen, onClose, onLogin
         <div className="quota-icon">😅</div>
         <h3 className="quota-title">今日免费次数已用完</h3>
         <p className="quota-desc">
-          登录后可以获取每日赠送次数
+          登录后每天可再获得 3 次免费转换
         </p>
         <div className="go-login">
           <button

@@ -16,8 +16,8 @@ export const PageHeader = ({ title, onBack, action }: PageHeaderProps) => (
         type="button"
         className="compact-page-header__back"
         onClick={onBack}
-        aria-label="返回转换页"
-        title="返回转换页"
+        aria-label="返回上一页"
+        title="返回上一页"
       >
         <ArrowLeftOutlined />
       </button>

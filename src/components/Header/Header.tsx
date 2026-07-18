@@ -2,9 +2,9 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { message } from 'antd';
 import {
-  BookOutlined,
   ClockCircleOutlined,
   HomeOutlined,
+  SoundOutlined,
   SwapOutlined,
 } from '@ant-design/icons';
 
@@ -30,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick, showMobileNavigati
     logout();
     storeLogout();
 
-    if (['/history', '/pay', '/corpus'].includes(location.pathname)) {
+    if (['/history', '/pay', '/corpus'].includes(location.pathname) || location.pathname.startsWith('/personal-styles')) {
       navigate('/convert', { replace: true });
     }
 
@@ -46,6 +46,7 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick, showMobileNavigati
   };
 
   const isActive = (path: string) => location.pathname === path;
+  const isSectionActive = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   return (
     <>
@@ -80,11 +81,11 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick, showMobileNavigati
           <span>历史记录</span>
         </button>
         <button
-          className={`operate-item ${isActive('/corpus') ? 'active' : ''}`}
-          onClick={() => goProtected('/corpus')}
+          className={`operate-item ${isSectionActive('/personal-styles') ? 'active' : ''}`}
+          onClick={() => goProtected('/personal-styles')}
         >
-          <BookOutlined />
-          <span>语料库</span>
+          <SoundOutlined />
+          <span>个人风格</span>
         </button>
         {/* <button
           className={`operate-item ${isActive('/pay') ? 'active' : ''}`}
@@ -141,11 +142,11 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick, showMobileNavigati
         </button>
         <button
           type="button"
-          className={`mobile-nav-item ${isActive('/corpus') ? 'active' : ''}`}
-          onClick={() => goProtected('/corpus')}
+          className={`mobile-nav-item ${isSectionActive('/personal-styles') ? 'active' : ''}`}
+          onClick={() => goProtected('/personal-styles')}
         >
-          <BookOutlined />
-          <span>语料库</span>
+          <SoundOutlined />
+          <span>风格</span>
         </button>
       </nav>
     )}

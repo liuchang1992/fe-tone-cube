@@ -21,21 +21,21 @@ import './Landing.less';
 const CAPABILITIES = [
   {
     icon: <ThunderboltOutlined />,
-    title: '文案语气转换',
-    description: '保留原意，快速切换正式、简洁、亲切等表达方式，让每段文字更适合使用场景。',
-    meta: '最多 2000 字符',
-  },
-  {
-    icon: <FileTextOutlined />,
-    title: '整篇文档转换',
-    description: '上传 TXT、DOCX 或 PDF，后台分段处理长内容，完成后可直接预览和下载。',
-    meta: '最多 15000 字符',
+    title: '决定内容怎么改',
+    description: '先选择邮件、汇报、社交媒体等使用场景，再决定仅润色、常规改写或结构重组。',
+    meta: '场景与改写方式分开控制',
   },
   {
     icon: <BookOutlined />,
-    title: '学习你的表达风格',
-    description: '分析代表性语料中的用词、句式和节奏，沉淀属于你的个人表达特征。',
-    meta: '每日 3 次分析',
+    title: '建立可复用的个人风格',
+    description: '从本人素材生成，也可以手动配置用词、语气和表达规则；支持多套风格、版本恢复与硬约束校验。',
+    meta: '需要时叠加，不用时随时关闭',
+  },
+  {
+    icon: <FileTextOutlined />,
+    title: '整篇文档也能转换',
+    description: '上传 TXT、DOCX 或 PDF，沿用相同的场景、改写方式和个人风格，完成后直接预览和下载。',
+    meta: '最多 15000 字符',
   },
 ];
 
@@ -71,8 +71,8 @@ export const Landing: FC = () => {
             <strong>更像你</strong>
           </h1>
           <p>
-            学习你的语言风格，完成文案改写、整篇文档转换与语料分析。
-            保留想表达的意思，也保留属于你的表达方式。
+            先选择使用场景和改写方式，再按需叠加你的个人风格。
+            从一句文案到整篇文档，保留原意，也保留属于你的表达习惯。
           </p>
           <div className="landing-hero__actions">
             <button type="button" className="landing-primary-button" onClick={startConverting}>
@@ -84,8 +84,8 @@ export const Landing: FC = () => {
           </div>
           <div className="landing-trust-points" aria-label="产品特点">
             <span><CheckCircleFilled /> 文案不用于模型训练</span>
-            <span><CheckCircleFilled /> 支持长文档</span>
-            <span><CheckCircleFilled /> 内容安全检测</span>
+            <span><CheckCircleFilled /> 支持文本与长文档</span>
+            <span><CheckCircleFilled /> 个人约束强制校验</span>
           </div>
         </div>
 
@@ -94,7 +94,7 @@ export const Landing: FC = () => {
           <img src={heroImage} alt="语气魔方层叠方块" />
           <div className="hero-float-card hero-float-card--style">
             <span className="hero-float-card__icon"><BookOutlined /></span>
-            <div><small>语料学习</small><strong>理解你的风格</strong></div>
+            <div><small>个人风格</small><strong>规则与版本可控</strong></div>
           </div>
           <div className="hero-float-card hero-float-card--document">
             <span className="hero-float-card__icon"><FileTextOutlined /></span>
@@ -105,7 +105,7 @@ export const Landing: FC = () => {
             <div className="hero-result-card__line hero-result-card__line--long" />
             <div className="hero-result-card__line" />
             <div className="hero-result-card__styles">
-              <i>正式</i><i>简洁</i><i>亲切</i>
+              <i>邮件场景</i><i>常规改写</i><i>个人风格</i>
             </div>
           </div>
         </div>
@@ -114,8 +114,8 @@ export const Landing: FC = () => {
       <section className="landing-section landing-capabilities" id="capabilities">
         <div className="landing-section__heading">
           <span>核心能力</span>
-          <h2>从一句文案，到整套表达风格</h2>
-          <p>不只是换几个词，而是让内容、场景和你的表达习惯更好地结合。</p>
+          <h2>改多少、怎么表达，都由你决定</h2>
+          <p>改写方式控制允许怎样调整原文，个人风格控制最终的用词、语气和表达规则。</p>
         </div>
         <div className="capability-grid">
           {CAPABILITIES.map((capability, index) => (
@@ -136,10 +136,10 @@ export const Landing: FC = () => {
         </div>
         <div className="workflow-list">
           {[
-            ['01', '提供语料', '上传有代表性的文章或文案'],
-            ['02', '分析特点', '提取用词、句式与语言节奏'],
-            ['03', '选择场景', '根据内容选择合适表达风格'],
-            ['04', '完成转换', '预览、复制或下载转换结果'],
+            ['01', '输入内容', '粘贴一段文字，或上传整篇文档'],
+            ['02', '选择怎么改', '选择使用场景与改写方式'],
+            ['03', '按需叠加风格', '使用个人风格，或保持普通表达'],
+            ['04', '检查与采用', '查看结果、效果对比和历史记录'],
           ].map(([number, title, description]) => (
             <article key={number}>
               <strong>{number}</strong>
@@ -169,7 +169,7 @@ export const Landing: FC = () => {
         <div>
           <span>现在开始</span>
           <h2>准备好让 AI 更像你了吗？</h2>
-          <p>从一段文案开始，体验更自然、更贴合场景的表达。</p>
+          <p>无需提前配置，从一段文案开始；登录后还可以逐步建立自己的表达风格。</p>
         </div>
         <button type="button" onClick={startConverting}>
           免费体验 <ArrowRightOutlined />

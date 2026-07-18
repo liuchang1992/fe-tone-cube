@@ -1,18 +1,24 @@
 import { create } from 'zustand';
 import { message } from 'antd';
-import { convertText, getQuota } from '@/api/convert';
+import {
+  convertTextDetailed,
+  getQuota,
+  type RewriteStrength,
+} from '@/api/convert';
 import {
   createDocumentConvertTask,
   getDocumentConvertTask,
   type DocumentConvertResponse,
 } from '@/api/documentConvert';
-import { getStoredUsername } from '@/api/auth';
+import { getStoredToken, getStoredUsername } from '@/api/auth';
 
 const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error ? error.message : fallback;
 
 const ACTIVE_DOCUMENT_TASK_KEY = 'activeDocumentTaskId';
 const wait = (milliseconds: number) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+const storedUsername = getStoredUsername();
+const hasStoredSession = Boolean(storedUsername && getStoredToken());
 
 const waitForDocumentTask = async (
   taskId: string,
@@ -34,10 +40,25 @@ interface UserState {
   isVip?: boolean;
 }
 
+interface ConversionContext {
+  inputText: string;
+  style: string;
+  personalStyleId: number;
+  personalStyleName: string;
+  personalStyleVersion: number | null;
+  comparisonGroupId: string;
+  rewriteStrength: RewriteStrength;
+}
+
 interface AppState {
   inputText: string;
   outputText: string;
   selectedStyle: string;
+  selectedPersonalStyleId: number | null;
+  selectedPersonalStyleName: string;
+  selectedPersonalStyleVersion: number | null;
+  selectedRewriteStrength: RewriteStrength;
+  lastPersonalConversion: ConversionContext | null;
   isLoading: boolean;
   isDocumentLoading: boolean;
   documentTaskProgress: number;
@@ -57,6 +78,8 @@ interface AppState {
   setInput: (text: string) => void;
   setOutput: (text: string) => void;
   setStyle: (style: string) => void;
+  setPersonalStyle: (styleId: number | null, name?: string, version?: number | null) => void;
+  setRewriteStrength: (strength: RewriteStrength) => void;
   setError: (error: string | null) => void;
   setUser: (user: UserState) => void;
   setShowLoginModal: (show: boolean) => void;
@@ -77,6 +100,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   inputText: '',
   outputText: '',
   selectedStyle: 'formal',
+  selectedPersonalStyleId: null,
+  selectedPersonalStyleName: '',
+  selectedPersonalStyleVersion: null,
+  selectedRewriteStrength: 'standard',
+  lastPersonalConversion: null,
   isLoading: false,
   isDocumentLoading: false,
   documentTaskProgress: 0,
@@ -84,11 +112,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   documentTaskResult: null,
   isDocumentPreviewOpen: false,
   error: null,
-  remainingQuota: 5,
+  remainingQuota: 2,
   documentRemainingQuota: null,
   user: {
-    username: getStoredUsername() || '',
-    isLoggedIn: !!getStoredUsername(),
+    username: hasStoredSession ? storedUsername || '' : '',
+    isLoggedIn: hasStoredSession,
   },
   showLoginModal: false,
   showRegisterModal: false,
@@ -97,8 +125,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   showQuotaAlert: false,
 
   setInput: (text) => set({ inputText: text }),
-  setOutput: (text) => set({ outputText: text }),
+  setOutput: (text) => set({ outputText: text, lastPersonalConversion: null }),
   setStyle: (style) => set({ selectedStyle: style }),
+  setPersonalStyle: (styleId, name = '', version = null) => set({
+    selectedPersonalStyleId: styleId,
+    selectedPersonalStyleName: styleId ? name : '',
+    selectedPersonalStyleVersion: styleId ? version : null,
+  }),
+  setRewriteStrength: (strength) => set({ selectedRewriteStrength: strength }),
   setError: (error) => set({ error }),
   setUser: (user) => set({ user }),
   setShowLoginModal: (show) => set({ showLoginModal: show }),
@@ -126,13 +160,24 @@ export const useAppStore = create<AppState>((set, get) => ({
       documentTaskMessage: '',
       documentTaskResult: null,
       isDocumentPreviewOpen: false,
+      selectedPersonalStyleId: null,
+      selectedPersonalStyleName: '',
+      selectedPersonalStyleVersion: null,
+      lastPersonalConversion: null,
     });
     // 可选：清空后重新获取访客配额
     setTimeout(() => get().fetchQuota(), 100);
   },
 
   convert: async () => {
-    const { inputText, selectedStyle } = get();
+    const {
+      inputText,
+      selectedStyle,
+      selectedPersonalStyleId,
+      selectedPersonalStyleName,
+      selectedPersonalStyleVersion,
+      selectedRewriteStrength,
+    } = get();
     if (!inputText.trim()) {
       set({ error: '请输入要转换的文本' });
       message.warning('请输入要转换的文本');
@@ -144,11 +189,28 @@ export const useAppStore = create<AppState>((set, get) => ({
       return;
     }
 
-    set({ isLoading: true, error: null, outputText: '' });
+    set({ isLoading: true, error: null, outputText: '', lastPersonalConversion: null });
 
     try {
-      const result = await convertText({ text: inputText, style: selectedStyle });
-      set({ outputText: result, isLoading: false });
+      const conversion = await convertTextDetailed({
+        text: inputText,
+        style: selectedStyle,
+        ...(selectedPersonalStyleId ? { personal_style_id: selectedPersonalStyleId } : {}),
+        rewrite_strength: selectedRewriteStrength,
+      });
+      set({
+        outputText: conversion.result,
+        isLoading: false,
+        lastPersonalConversion: selectedPersonalStyleId ? {
+          inputText,
+          style: selectedStyle,
+          personalStyleId: selectedPersonalStyleId,
+          personalStyleName: selectedPersonalStyleName || '个人风格',
+          personalStyleVersion: selectedPersonalStyleVersion,
+          comparisonGroupId: conversion.comparisonGroupId || '',
+          rewriteStrength: selectedRewriteStrength,
+        } : null,
+      });
       await get().fetchQuota();
     } catch (err: unknown) {
       const errorMsg = getErrorMessage(err, '转换失败，请稍后重试');
@@ -174,7 +236,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   convertDocument: async (file) => {
-    const { selectedStyle } = get();
+    const { selectedStyle, selectedPersonalStyleId, selectedRewriteStrength } = get();
     set({
       isDocumentLoading: true,
       documentTaskProgress: 0,
@@ -185,7 +247,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
 
     try {
-      const created = await createDocumentConvertTask(file, selectedStyle);
+      const created = await createDocumentConvertTask(
+        file,
+        selectedStyle,
+        selectedPersonalStyleId,
+        selectedRewriteStrength,
+      );
       localStorage.setItem(ACTIVE_DOCUMENT_TASK_KEY, created.task_id);
       const result = await waitForDocumentTask(created.task_id, (progress, taskMessage) => {
         set({ documentTaskProgress: progress, documentTaskMessage: taskMessage });
@@ -265,7 +332,18 @@ export const useAppStore = create<AppState>((set, get) => ({
         documentRemainingQuota: quota.document_remaining,
       });
     } catch {
-      // 如果获取失败，保持当前值
+      // 无效 token 会由响应拦截器清除。同步清理内存状态，避免页面仍显示已登录，
+      // 却使用游客的文档额度并把上传按钮永久置灰。
+      if (!getStoredToken() && get().user.isLoggedIn) {
+        set({
+          user: { username: '', isLoggedIn: false, isVip: false },
+          documentRemainingQuota: null,
+          selectedPersonalStyleId: null,
+          selectedPersonalStyleName: '',
+          selectedPersonalStyleVersion: null,
+          lastPersonalConversion: null,
+        });
+      }
     }
   },
 
@@ -275,6 +353,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       outputText: '',
       error: null,
       isLoading: false,
+      lastPersonalConversion: null,
     });
   },
 }));

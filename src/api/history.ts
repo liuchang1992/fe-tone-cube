@@ -8,6 +8,13 @@ export interface HistoryItem {
   style: string;
   conversion_type: 'text' | 'document';
   file_name: string | null;
+  personal_style_id: number | null;
+  personal_style_name: string | null;
+  personal_style_version: number | null;
+  comparison_group_id: string | null;
+  comparison_role: 'personal' | 'baseline' | null;
+  comparison_preference: 'personal' | 'baseline' | null;
+  rewrite_strength: 'light' | 'standard' | 'deep';
   created_at: string;
 }
 
@@ -31,4 +38,18 @@ export const deleteHistoryItem = async (id: number): Promise<void> => {
 
 export const clearAllHistory = async (): Promise<void> => {
   await apiClient.delete('/api/history/clear');
+};
+
+export const getHistoryComparison = async (comparisonGroupId: string): Promise<HistoryItem[]> => {
+  const response = await apiClient.get<{ items: HistoryItem[] }>(
+    `/api/history/comparisons/${comparisonGroupId}`,
+  );
+  return response.data.items;
+};
+
+export const saveComparisonPreference = async (
+  comparisonGroupId: string,
+  preference: 'personal' | 'baseline',
+): Promise<void> => {
+  await apiClient.put(`/api/history/comparisons/${comparisonGroupId}/preference`, { preference });
 };

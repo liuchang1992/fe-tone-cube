@@ -141,7 +141,7 @@ export const Privacy: React.FC = () => {
             如您对本隐私政策有任何疑问、意见或建议，可通过以下方式联系我们：
             <br />
             <Text strong>
-              <MailOutlined /> 邮箱：<a href="mailto:18233383821@163.com">18233383821@163.com</a>
+              <MailOutlined /> 邮箱：<a href="mailto:yuqimofangsite@163.com">yuqimofangsite@163.com</a>
             </Text>
           </Paragraph>
 
@@ -169,7 +169,7 @@ export const Privacy: React.FC = () => {
 
         <div className="privacy-copyright">
           © 2026 语气魔方 · 保留所有权利 &nbsp;·&nbsp; 
-          <a href="mailto:18233383821@163.com">联系我们</a>
+          <a href="mailto:yuqimofangsite@163.com">联系我们</a>
           &nbsp;·&nbsp;
           <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">
             京ICP备2026042578号-1
