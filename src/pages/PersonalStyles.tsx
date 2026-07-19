@@ -33,6 +33,8 @@ const PURPOSE_OPTIONS: Array<{ value: StylePurpose; label: string }> = [
   { value: 'other', label: '其他用途' },
 ];
 
+const MAX_PERSONAL_STYLES = 3;
+
 const purposeLabel = (purpose: StylePurpose) =>
   PURPOSE_OPTIONS.find((item) => item.value === purpose)?.label || '通用表达';
 
@@ -85,12 +87,21 @@ export const PersonalStyles = () => {
   }, [navigate, user.isLoggedIn]);
 
   const openCreate = () => {
+    if (styles.length >= MAX_PERSONAL_STYLES) {
+      message.warning(`每个账号最多创建 ${MAX_PERSONAL_STYLES} 套个人风格；可以先停用不再使用的风格`);
+      return;
+    }
     setName('');
     setPurpose('general');
     setCreateOpen(true);
   };
 
   const handleCreate = async () => {
+    if (styles.length >= MAX_PERSONAL_STYLES) {
+      message.warning(`每个账号最多创建 ${MAX_PERSONAL_STYLES} 套个人风格`);
+      setCreateOpen(false);
+      return;
+    }
     const nextName = name.trim();
     if (!nextName) {
       message.warning('请先给这套风格起一个名字');
@@ -142,7 +153,13 @@ export const PersonalStyles = () => {
           title="个人风格"
           onBack={() => navigate('/convert')}
           action={(
-            <button type="button" className="ps-primary-button ps-primary-button--compact" onClick={openCreate}>
+            <button
+              type="button"
+              className="ps-primary-button ps-primary-button--compact"
+              onClick={openCreate}
+              disabled={!loading && styles.length >= MAX_PERSONAL_STYLES}
+              title={!loading && styles.length >= MAX_PERSONAL_STYLES ? `最多创建 ${MAX_PERSONAL_STYLES} 套个人风格` : undefined}
+            >
               <PlusOutlined /> 新建风格
             </button>
           )}
@@ -164,7 +181,7 @@ export const PersonalStyles = () => {
         <div className="ps-section-heading">
           <div>
             <h2>我的风格</h2>
-            <p>创建后添加至少 300 字素材，即可生成结构化风格画像。</p>
+            <p>添加一份至少 50 字的关联素材即可分析（累计 300 字以上分析相对稳定）。</p>
           </div>
         </div>
 
@@ -225,7 +242,7 @@ export const PersonalStyles = () => {
                   </div>
                   <div className="ps-style-card__progress">
                     <div><span style={{ width: `${ready ? 100 : progress}%` }} /></div>
-                    <small>{ready ? '风格画像已启用' : `${formatChars(style.material_char_count)} / 建议 300 字`}</small>
+                    <small>{ready ? '风格画像已启用' : `${formatChars(style.material_char_count)} / 建议 300 字（累计 300 字以上分析相对稳定）`}</small>
                   </div>
                   <div className="ps-style-card__footer">
                     <span>{style.material_count} 份素材 · {formatChars(style.material_char_count)}</span>
@@ -234,11 +251,11 @@ export const PersonalStyles = () => {
                 </article>
               );
             })}
-            {styles.length < 5 && (
+            {styles.length < MAX_PERSONAL_STYLES && (
               <button type="button" className="ps-style-card ps-style-card--add" onClick={openCreate}>
                 <span><PlusOutlined /></span>
                 <strong>新建一套风格</strong>
-                <small>最多可创建 5 套</small>
+                <small>最多可创建 {MAX_PERSONAL_STYLES} 套</small>
               </button>
             )}
           </section>

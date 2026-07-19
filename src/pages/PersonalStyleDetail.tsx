@@ -100,8 +100,11 @@ const PREVIEW_STRENGTH_OPTIONS: Array<{ value: StylePreviewStrength; label: stri
 ];
 
 const MAX_STYLE_MATERIALS = 5;
+const MIN_STYLE_MATERIAL_CHARS = 50;
 const MAX_STYLE_MATERIAL_CHARS = 5000;
 const MAX_STYLE_TOTAL_CHARS = 12000;
+const RECOMMENDED_STYLE_MATERIAL_CHARS = 300;
+const MATERIAL_STABILITY_HINT = '（累计 300 字以上分析相对稳定）';
 
 const DIMENSION_OPTIONS: Array<{
   key: keyof StyleDimensions;
@@ -217,8 +220,12 @@ export const PersonalStyleDetail = () => {
   const [previewStrength, setPreviewStrength] = useState<StylePreviewStrength>('standard');
   const [previewProfileFingerprint, setPreviewProfileFingerprint] = useState('');
 
-  const enoughMaterial = (style?.material_char_count || 0) >= 300;
-  const completeness = Math.min(100, Math.round(((style?.material_char_count || 0) / 300) * 100));
+  const materialCharCount = style?.material_char_count || 0;
+  const hasAnalyzableMaterial = materialCharCount >= MIN_STYLE_MATERIAL_CHARS;
+  const materialReferenceProgress = Math.min(
+    100,
+    Math.round((materialCharCount / RECOMMENDED_STYLE_MATERIAL_CHARS) * 100),
+  );
   const ruleCount = useMemo(
     () => Object.values(rules).reduce((sum, items) => sum + items.length, 0),
     [rules],
@@ -313,8 +320,8 @@ export const PersonalStyleDetail = () => {
   };
 
   const handleAnalyze = () => {
-    if (!enoughMaterial) {
-      message.warning('关联素材至少需要 300 字才能分析；也可以跳过关联素材，直接编辑最终配置');
+    if (!hasAnalyzableMaterial) {
+      message.warning(`请先添加一份至少 ${MIN_STYLE_MATERIAL_CHARS} 字的关联素材${MATERIAL_STABILITY_HINT}；也可以直接编辑最终配置`);
       return;
     }
     const replacesCurrentProfile = Boolean(style?.current_version || profileChanged);
@@ -549,8 +556,8 @@ export const PersonalStyleDetail = () => {
 
   const handleAddMaterial = async () => {
     if (!style) return;
-    if (materialMode === 'text' && materialContent.trim().length < 50) {
-      message.warning('粘贴的关联素材至少需要 50 个字符');
+    if (materialMode === 'text' && materialContent.trim().length < MIN_STYLE_MATERIAL_CHARS) {
+      message.warning(`粘贴的关联素材至少需要 ${MIN_STYLE_MATERIAL_CHARS} 个字符${MATERIAL_STABILITY_HINT}`);
       return;
     }
     if (materialMode === 'text' && materialContent.trim().length > MAX_STYLE_MATERIAL_CHARS) {
@@ -712,17 +719,23 @@ export const PersonalStyleDetail = () => {
           </div>
           <div className="psd-overview-readiness">
             <div className="psd-readiness-copy">
-              <span>关联素材充分度</span>
-              <strong>{enoughMaterial ? '可以分析' : `${completeness}%`}</strong>
+              <span>关联素材参考量</span>
+              <strong>{formatChars(style.material_char_count)}</strong>
             </div>
-            <div className="psd-readiness-track"><span style={{ width: `${completeness}%` }} /></div>
-            <small>{enoughMaterial ? '关联素材越丰富，风格越稳定' : `还差 ${Math.max(0, 300 - style.material_char_count)} 字`}</small>
+            <div className="psd-readiness-track"><span style={{ width: `${materialReferenceProgress}%` }} /></div>
+            <small>
+              {!hasAnalyzableMaterial
+                ? `添加一份至少 ${MIN_STYLE_MATERIAL_CHARS} 字的素材即可分析${MATERIAL_STABILITY_HINT}`
+                : style.material_char_count < RECOMMENDED_STYLE_MATERIAL_CHARS
+                  ? `已可分析${MATERIAL_STABILITY_HINT}`
+                  : '素材较充分，可继续添加更具代表性的内容'}
+            </small>
           </div>
           <button
             type="button"
             className="psd-analyze-button"
             onClick={handleAnalyze}
-            disabled={!enoughMaterial || analyzing}
+            disabled={!hasAnalyzableMaterial || analyzing}
           >
             <HighlightOutlined /> {analyzing ? '分析中...' : style.current_version ? '重新分析' : '生成风格画像'}
           </button>
@@ -735,7 +748,7 @@ export const PersonalStyleDetail = () => {
           </div>
           <div className="psd-start-guide__path is-recommended">
             <b>推荐</b>
-            <span><strong>用关联素材生成</strong>：添加本人作品作为关联素材 → 累计至少 300 字 → 生成风格画像 → 在最终配置区微调并保存</span>
+            <span><strong>用关联素材生成</strong>：添加一份至少 {MIN_STYLE_MATERIAL_CHARS} 字的本人作品{MATERIAL_STABILITY_HINT} → 有多少分析多少 → 在最终配置区微调并保存</span>
           </div>
           <div className="psd-start-guide__path">
             <b>手动</b>
@@ -923,16 +936,16 @@ export const PersonalStyleDetail = () => {
                 type="button"
                 className="psd-mobile-analyze-button"
                 onClick={handleAnalyze}
-                disabled={!enoughMaterial || analyzing}
+                disabled={!hasAnalyzableMaterial || analyzing}
               >
                 <HighlightOutlined />
                 {analyzing
                   ? '分析中...'
                   : style.current_version
                     ? '根据当前关联素材重新分析'
-                    : enoughMaterial
+                    : hasAnalyzableMaterial
                       ? '根据当前关联素材生成风格画像'
-                      : `还差 ${Math.max(0, 300 - style.material_char_count)} 字可开始分析`}
+                      : `添加至少 ${MIN_STYLE_MATERIAL_CHARS} 字的关联素材后可分析${MATERIAL_STABILITY_HINT}`}
               </button>
             </div>
           </aside>
@@ -1146,8 +1159,8 @@ export const PersonalStyleDetail = () => {
           <div className="psd-text-material-form">
             <label><span>关联素材名称</span><Input value={materialName} placeholder="例如：上周的工作周报" maxLength={128} onChange={(event) => setMaterialName(event.target.value)} /></label>
             <label>
-              <span>关联素材正文 <small>{materialContent.length}/{MAX_STYLE_MATERIAL_CHARS}</small></span>
-              <Input.TextArea value={materialContent} maxLength={MAX_STYLE_MATERIAL_CHARS} autoSize={{ minRows: 8, maxRows: 12 }} placeholder="粘贴一段你本人写过、并且认可其表达方式的内容..." onChange={(event) => setMaterialContent(event.target.value)} />
+              <span>关联素材正文（至少 {MIN_STYLE_MATERIAL_CHARS} 字）{MATERIAL_STABILITY_HINT} <small>{materialContent.length}/{MAX_STYLE_MATERIAL_CHARS}</small></span>
+              <Input.TextArea value={materialContent} maxLength={MAX_STYLE_MATERIAL_CHARS} autoSize={{ minRows: 8, maxRows: 12 }} placeholder={`粘贴一段至少 ${MIN_STYLE_MATERIAL_CHARS} 字、由你本人写过且认可其表达方式的内容...`} onChange={(event) => setMaterialContent(event.target.value)} />
             </label>
           </div>
         ) : (
@@ -1163,7 +1176,7 @@ export const PersonalStyleDetail = () => {
           >
             <InboxOutlined />
             <strong>{materialFile?.name || '点击或拖拽文件到这里'}</strong>
-            <span>支持 TXT、DOCX、PDF，单份内容最多 {MAX_STYLE_MATERIAL_CHARS} 字，全部素材都会完整分析</span>
+            <span>支持 TXT、DOCX、PDF，单份 {MIN_STYLE_MATERIAL_CHARS}～{MAX_STYLE_MATERIAL_CHARS} 字{MATERIAL_STABILITY_HINT}，全部素材都会完整分析</span>
             <input ref={fileInputRef} type="file" accept=".txt,.docx,.pdf" onChange={(event) => setMaterialFile(event.target.files?.[0] || null)} />
           </div>
         )}

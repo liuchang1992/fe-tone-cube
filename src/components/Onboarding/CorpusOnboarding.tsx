@@ -78,7 +78,7 @@ export const PersonalStyleOnboarding: React.FC<PersonalStyleOnboardingProps> = (
         </ol>
 
         <p className="corpus-onboarding__hint">
-          关联素材累计至少 300 字即可分析；暂时没有合适内容，也可以先手动填写风格配置。
+          单份关联素材至少 50 字即可分析（累计 300 字以上分析相对稳定）；也可以直接手动填写风格配置。
         </p>
 
         <div className="corpus-onboarding__actions">
