@@ -70,7 +70,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       await fetchQuota();
       handleClose();
     } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '登录失败，请稍后再试');
+      const errorMessage = err instanceof Error ? err.message : '登录失败，请稍后再试';
+      if (errorMessage.includes('尚未注册')) {
+        setFieldErrors({ username: errorMessage });
+        usernameInputRef.current?.focus();
+      } else if (errorMessage.includes('密码错误')) {
+        setFieldErrors({ password: errorMessage });
+        passwordInputRef.current?.focus();
+      } else {
+        message.error(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }

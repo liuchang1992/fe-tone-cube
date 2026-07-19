@@ -261,6 +261,12 @@ export const History: React.FC = () => {
                           <span className="style-badge">{item.style}</span>
                           <span className="history-context-meta">
                             <span>{STRENGTH_LABELS[item.rewrite_strength] || '常规改写'}</span>
+                            {item.custom_scene_name && (
+                              <span>
+                                自定义场景：{item.custom_scene_name}
+                                {item.custom_scene_version ? ` v${item.custom_scene_version}` : ''}
+                              </span>
+                            )}
                             {item.personal_style_name && (
                               <span>
                                 个人风格：{item.personal_style_name}
@@ -362,7 +368,7 @@ export const History: React.FC = () => {
         onCancel={() => !comparisonLoading && setComparisonOpen(false)}
         width={960}
         centered
-        className="conversion-compare-modal"
+        className="conversion-compare-modal history-compare-modal"
         footer={null}
       >
         {comparisonLoading ? (

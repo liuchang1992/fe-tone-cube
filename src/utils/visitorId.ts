@@ -13,7 +13,19 @@ export function getVisitorId(): string {
 }
 
 function generateVisitorId(): string {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 10);
-  return `visitor_${timestamp}_${random}`;
+  return `visitor_${crypto.randomUUID()}`;
+}
+
+export function getAnalyticsSessionId(): string {
+  const key = 'tone_cube_analytics_session_id';
+  const activityKey = 'tone_cube_analytics_last_activity';
+  const now = Date.now();
+  const lastActivity = Number(sessionStorage.getItem(activityKey) || 0);
+  let sessionId = sessionStorage.getItem(key);
+  if (!sessionId || now - lastActivity > 30 * 60 * 1000) {
+    sessionId = crypto.randomUUID();
+    sessionStorage.setItem(key, sessionId);
+  }
+  sessionStorage.setItem(activityKey, String(now));
+  return sessionId;
 }

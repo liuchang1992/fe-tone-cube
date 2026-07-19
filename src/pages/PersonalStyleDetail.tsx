@@ -99,6 +99,10 @@ const PREVIEW_STRENGTH_OPTIONS: Array<{ value: StylePreviewStrength; label: stri
   { value: 'deep', label: '结构重组' },
 ];
 
+const MAX_STYLE_MATERIALS = 5;
+const MAX_STYLE_MATERIAL_CHARS = 5000;
+const MAX_STYLE_TOTAL_CHARS = 12000;
+
 const DIMENSION_OPTIONS: Array<{
   key: keyof StyleDimensions;
   label: string;
@@ -324,7 +328,7 @@ export const PersonalStyleDetail = () => {
           {replacesCurrentProfile && (
             <p className="is-warning">生成结果会替换最终配置区当前显示的内容；已有历史版本仍会保留。</p>
           )}
-          <p>建议先完成关联素材分析，再到最终配置区微调并保存。</p>
+          {/* <p>建议先完成关联素材分析，再到最终配置区微调并保存。</p> */}
         </div>
       ),
       okText: replacesCurrentProfile ? '确认重新生成' : '开始生成',
@@ -525,6 +529,15 @@ export const PersonalStyleDetail = () => {
   };
 
   const openAddMaterial = () => {
+    if (!style) return;
+    if (materials.length >= MAX_STYLE_MATERIALS) {
+      message.warning(`每套个人风格最多添加 ${MAX_STYLE_MATERIALS} 份关联素材，请先删除不具代表性的素材`);
+      return;
+    }
+    if (style.material_char_count >= MAX_STYLE_TOTAL_CHARS) {
+      message.warning(`关联素材总字数已达到 ${MAX_STYLE_TOTAL_CHARS} 字，请先精简现有素材`);
+      return;
+    }
     setMaterialMode('text');
     setMaterialName('');
     setMaterialContent('');
@@ -535,8 +548,20 @@ export const PersonalStyleDetail = () => {
   };
 
   const handleAddMaterial = async () => {
+    if (!style) return;
     if (materialMode === 'text' && materialContent.trim().length < 50) {
       message.warning('粘贴的关联素材至少需要 50 个字符');
+      return;
+    }
+    if (materialMode === 'text' && materialContent.trim().length > MAX_STYLE_MATERIAL_CHARS) {
+      message.warning(`单份关联素材最多支持 ${MAX_STYLE_MATERIAL_CHARS} 字`);
+      return;
+    }
+    if (
+      materialMode === 'text'
+      && style.material_char_count + materialContent.trim().length > MAX_STYLE_TOTAL_CHARS
+    ) {
+      message.warning(`关联素材合计最多支持 ${MAX_STYLE_TOTAL_CHARS} 字，请缩短本次内容`);
       return;
     }
     if (materialMode === 'file' && !materialFile) {
@@ -852,14 +877,14 @@ export const PersonalStyleDetail = () => {
             </div>
             <div className="psd-panel psd-material-panel">
               <div className="psd-panel-heading psd-material-heading">
-                <div><h2>关联素材</h2><p>{materials.length}/20 份 · {formatChars(style.material_char_count)}</p></div>
-                <button type="button" onClick={openAddMaterial}><PlusOutlined /> 添加</button>
+                <div><h2>关联素材</h2><p>{materials.length}/{MAX_STYLE_MATERIALS} 份 · {formatChars(style.material_char_count)}/{formatChars(MAX_STYLE_TOTAL_CHARS)}</p></div>
+                <button type="button" onClick={openAddMaterial} disabled={materials.length >= MAX_STYLE_MATERIALS || style.material_char_count >= MAX_STYLE_TOTAL_CHARS}><PlusOutlined /> 添加</button>
               </div>
               {materials.length === 0 ? (
                 <div className="psd-material-empty">
                   <span><FileAddOutlined /></span>
                   <strong>还没有关联素材</strong>
-                  <p>添加你本人写过的内容作为分析依据，建议先准备 2～3 份。</p>
+                  <p>添加你本人写过的内容作为分析依据，建议准备 2～5 份代表素材，系统会完整分析。</p>
                   <button type="button" onClick={openAddMaterial}>添加第一份关联素材</button>
                 </div>
               ) : (
@@ -892,7 +917,7 @@ export const PersonalStyleDetail = () => {
                 </div>
               )}
               <div className="psd-material-tip">
-                <StarFilled /> 标为代表的关联素材会在分析时优先参考。只添加你认可且确实由本人创作的内容。
+                <StarFilled /> 系统会完整分析全部关联素材；“优先参考”用于强调其中最能代表你的内容。
               </div>
               <button
                 type="button"
@@ -957,7 +982,6 @@ export const PersonalStyleDetail = () => {
               value={previewText}
               maxLength={1000}
               showCount
-              autoSize={{ minRows: 6, maxRows: 10 }}
               placeholder="输入一小段熟悉的内容，更容易判断这套风格像不像你。"
               onChange={(event) => setPreviewText(event.target.value)}
             />
@@ -1122,8 +1146,8 @@ export const PersonalStyleDetail = () => {
           <div className="psd-text-material-form">
             <label><span>关联素材名称</span><Input value={materialName} placeholder="例如：上周的工作周报" maxLength={128} onChange={(event) => setMaterialName(event.target.value)} /></label>
             <label>
-              <span>关联素材正文 <small>{materialContent.length}/15000</small></span>
-              <Input.TextArea value={materialContent} maxLength={15000} autoSize={{ minRows: 8, maxRows: 12 }} placeholder="粘贴一段你本人写过、并且认可其表达方式的内容..." onChange={(event) => setMaterialContent(event.target.value)} />
+              <span>关联素材正文 <small>{materialContent.length}/{MAX_STYLE_MATERIAL_CHARS}</small></span>
+              <Input.TextArea value={materialContent} maxLength={MAX_STYLE_MATERIAL_CHARS} autoSize={{ minRows: 8, maxRows: 12 }} placeholder="粘贴一段你本人写过、并且认可其表达方式的内容..." onChange={(event) => setMaterialContent(event.target.value)} />
             </label>
           </div>
         ) : (
@@ -1139,7 +1163,7 @@ export const PersonalStyleDetail = () => {
           >
             <InboxOutlined />
             <strong>{materialFile?.name || '点击或拖拽文件到这里'}</strong>
-            <span>支持 TXT、DOCX、PDF，单份内容最多 15000 字</span>
+            <span>支持 TXT、DOCX、PDF，单份内容最多 {MAX_STYLE_MATERIAL_CHARS} 字，全部素材都会完整分析</span>
             <input ref={fileInputRef} type="file" accept=".txt,.docx,.pdf" onChange={(event) => setMaterialFile(event.target.files?.[0] || null)} />
           </div>
         )}

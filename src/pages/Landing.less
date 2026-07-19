@@ -304,7 +304,7 @@
 
 .capability-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 20px;
 }
 
@@ -375,6 +375,11 @@
 .capability-card--3 .capability-card__icon {
   color: #9333ea;
   background: #faf5ff;
+}
+
+.capability-card--4 .capability-card__icon {
+  color: #7c3aed;
+  background: #f5f3ff;
 }
 
 .landing-privacy {
@@ -677,7 +682,7 @@
   }
 
   .capability-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .landing-privacy {
@@ -810,6 +815,10 @@
 
   .capability-card {
     padding: 24px;
+  }
+
+  .capability-grid {
+    grid-template-columns: 1fr;
   }
 
   .landing-privacy {

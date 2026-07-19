@@ -1,4 +1,5 @@
 import {
+  AppstoreAddOutlined,
   ArrowRightOutlined,
   BookOutlined,
   CheckCircleFilled,
@@ -30,6 +31,12 @@ const CAPABILITIES = [
     title: '建立可复用的个人风格',
     description: '从本人素材生成，也可以手动配置用词、语气和表达规则；支持多套风格、版本恢复与硬约束校验。',
     meta: '需要时叠加，不用时随时关闭',
+  },
+  {
+    icon: <AppstoreAddOutlined />,
+    title: '创建自己的转换场景',
+    description: '描述文案用途和目标读者，自动生成可编辑的结构与表达要求；试写满意后保存为仅自己可见的转换类型。',
+    meta: '支持生成、编辑、试写与私有保存',
   },
   {
     icon: <FileTextOutlined />,
@@ -71,7 +78,7 @@ export const Landing: FC = () => {
             <strong>更像你</strong>
           </h1>
           <p>
-            先选择使用场景和改写方式，再按需叠加你的个人风格。
+            选择现成场景，也可以创建自己的转换类型，再按需叠加个人风格。
             从一句文案到整篇文档，保留原意，也保留属于你的表达习惯。
           </p>
           <div className="landing-hero__actions">
@@ -105,7 +112,7 @@ export const Landing: FC = () => {
             <div className="hero-result-card__line hero-result-card__line--long" />
             <div className="hero-result-card__line" />
             <div className="hero-result-card__styles">
-              <i>邮件场景</i><i>常规改写</i><i>个人风格</i><i>本地脱敏</i>
+              <i>自定义场景</i><i>常规改写</i><i>个人风格</i><i>本地脱敏</i>
             </div>
           </div>
         </div>
@@ -115,7 +122,7 @@ export const Landing: FC = () => {
         <div className="landing-section__heading">
           <span>核心能力</span>
           <h2>改多少、怎么表达，都由你决定</h2>
-          <p>改写方式控制允许怎样调整原文，个人风格控制最终的用词、语气和表达规则。</p>
+          <p>场景决定文案用途，也可以由你创建；改写方式控制改动范围，个人风格控制最终表达习惯。</p>
         </div>
         <div className="capability-grid">
           {CAPABILITIES.map((capability, index) => (
@@ -173,7 +180,7 @@ export const Landing: FC = () => {
         <div className="workflow-list">
           {[
             ['01', '输入内容', '粘贴一段文字，或上传整篇文档'],
-            ['02', '选择怎么改', '选择使用场景与改写方式'],
+            ['02', '选择怎么改', '选择现成场景，或使用自己的转换类型'],
             ['03', '按需叠加风格', '使用个人风格，或保持普通表达'],
             ['04', '检查与采用', '查看结果、效果对比和历史记录'],
           ].map(([number, title, description]) => (
@@ -205,7 +212,7 @@ export const Landing: FC = () => {
         <div>
           <span>现在开始</span>
           <h2>准备好让 AI 更像你了吗？</h2>
-          <p>无需提前配置，从一段文案开始；登录后还可以逐步建立自己的表达风格。</p>
+          <p>无需提前配置，从一段文案开始；登录后还可以创建转换场景和个人风格。</p>
         </div>
         <button type="button" onClick={startConverting}>
           免费体验 <ArrowRightOutlined />

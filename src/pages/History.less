@@ -3,6 +3,19 @@
   background: #f5f6f8;
 }
 
+.history-compare-modal,
+.history-compare-modal * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.history-compare-modal::-webkit-scrollbar,
+.history-compare-modal *::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 .history-wrapper {
   width: min(820px, calc(100vw - 40px));
   margin: 0 auto;

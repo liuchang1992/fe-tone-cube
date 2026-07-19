@@ -107,6 +107,15 @@
 
 .convert-update-modal .ant-modal-title { color: #25212d; font-weight: 900; }
 
+.convert-update-modal .ant-modal-body {
+  max-height: min(72vh, 720px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
 .convert-update-modal__intro {
   margin: 8px 0 16px;
   color: #747b88;

@@ -1,3 +1,7 @@
+import packageJson from '../../package.json';
+
+const CURRENT_VERSION = packageJson.version;
+
 export interface ReleaseNoteItem {
   title: string;
   description: string;
@@ -15,15 +19,19 @@ export interface ReleaseNote {
 
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
-    version: '2.0.0',
+    version: CURRENT_VERSION,
     tipTitle: '语气魔方 2.0 已上线',
-    tipDescription: '改写、个人风格与隐私保护完成一次全面升级',
-    modalTitle: '语气魔方 2.0 更新内容',
-    introduction: '这是一次围绕“可控、像你、敢用”完成的整体升级：从选择怎么改，到长期维护个人风格，再到敏感内容本地脱敏，转换流程变得更完整。',
+    tipDescription: '自定义场景、个人风格与隐私保护完成一次全面升级',
+    modalTitle: `语气魔方 ${CURRENT_VERSION} 更新内容`,
+    introduction: '这是一次围绕“可控、像你、敢用”完成的整体升级：从创建自己的转换场景，到长期维护个人风格，再到敏感内容本地脱敏，转换流程变得更完整。',
     items: [
       {
         title: '改写流程全面升级',
         description: '使用场景重新分组，并新增政务汇报、商务、科研和论文表达；通过仅润色、常规改写或结构重组控制改动范围。',
+      },
+      {
+        title: '创建自己的转换场景',
+        description: '用一句话描述用途、读者和目标，生成可编辑的结构化配置；支持安全校验、试写和私有保存，并可与其他转换能力组合使用。',
       },
       {
         title: '个人风格成为长期资产',
@@ -42,10 +50,11 @@ export const RELEASE_NOTES: ReleaseNote[] = [
         description: '重新整理首页、转换页、个人风格详情和隐私确认流程，让关键操作在小屏幕上更清楚、更紧凑。',
       },
     ],
-    footer: '本地脱敏无需登录；不创建个人风格，也可以继续使用普通转换。',
+    footer: '本地脱敏无需登录；自定义场景和个人风格仅自己可见，不创建也可以继续使用普通转换。',
   },
 ];
 
-export const getReleaseNote = (version: string) => (
-  RELEASE_NOTES.find((release) => release.version === version) || null
-);
+export const getReleaseNote = (version: string): ReleaseNote | null => {
+  if (!/^2\.0\.\d+$/.test(version)) return null;
+  return RELEASE_NOTES.find((item) => item.version === version) || null;
+};

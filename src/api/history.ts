@@ -11,6 +11,9 @@ export interface HistoryItem {
   personal_style_id: number | null;
   personal_style_name: string | null;
   personal_style_version: number | null;
+  custom_scene_id: number | null;
+  custom_scene_name: string | null;
+  custom_scene_version: number | null;
   comparison_group_id: string | null;
   comparison_role: 'personal' | 'baseline' | null;
   comparison_preference: 'personal' | 'baseline' | null;

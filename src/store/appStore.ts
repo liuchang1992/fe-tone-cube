@@ -49,6 +49,7 @@ interface ConversionContext {
   personalStyleVersion: number | null;
   comparisonGroupId: string;
   rewriteStrength: RewriteStrength;
+  customSceneId: number | null;
 }
 
 interface PrivacyConversionOptions {
@@ -60,6 +61,9 @@ interface AppState {
   inputText: string;
   outputText: string;
   selectedStyle: string;
+  selectedCustomSceneId: number | null;
+  selectedCustomSceneName: string;
+  selectedCustomSceneVersion: number | null;
   selectedPersonalStyleId: number | null;
   selectedPersonalStyleName: string;
   selectedPersonalStyleVersion: number | null;
@@ -86,6 +90,7 @@ interface AppState {
   setInput: (text: string) => void;
   setOutput: (text: string) => void;
   setStyle: (style: string) => void;
+  setCustomScene: (sceneId: number | null, name?: string, version?: number | null) => void;
   setPersonalStyle: (styleId: number | null, name?: string, version?: number | null) => void;
   setRewriteStrength: (strength: RewriteStrength) => void;
   setError: (error: string | null) => void;
@@ -108,6 +113,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   inputText: '',
   outputText: '',
   selectedStyle: 'formal',
+  selectedCustomSceneId: null,
+  selectedCustomSceneName: '',
+  selectedCustomSceneVersion: null,
   selectedPersonalStyleId: null,
   selectedPersonalStyleName: '',
   selectedPersonalStyleVersion: null,
@@ -141,7 +149,17 @@ export const useAppStore = create<AppState>((set, get) => ({
     lastConversionPrivacyCount: 0,
     lastConversionPrivacyMode: false,
   }),
-  setStyle: (style) => set({ selectedStyle: style }),
+  setStyle: (style) => set({
+    selectedStyle: style,
+    selectedCustomSceneId: null,
+    selectedCustomSceneName: '',
+    selectedCustomSceneVersion: null,
+  }),
+  setCustomScene: (sceneId, name = '', version = null) => set({
+    selectedCustomSceneId: sceneId,
+    selectedCustomSceneName: sceneId ? name : '',
+    selectedCustomSceneVersion: sceneId ? version : null,
+  }),
   setPersonalStyle: (styleId, name = '', version = null) => set({
     selectedPersonalStyleId: styleId,
     selectedPersonalStyleName: styleId ? name : '',
@@ -178,6 +196,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       selectedPersonalStyleId: null,
       selectedPersonalStyleName: '',
       selectedPersonalStyleVersion: null,
+      selectedCustomSceneId: null,
+      selectedCustomSceneName: '',
+      selectedCustomSceneVersion: null,
       lastPersonalConversion: null,
       lastConversionPrivacyCount: 0,
       lastConversionPrivacyMode: false,
@@ -194,6 +215,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       selectedPersonalStyleName,
       selectedPersonalStyleVersion,
       selectedRewriteStrength,
+      selectedCustomSceneId,
     } = get();
     if (!inputText.trim()) {
       set({ error: '请输入要转换的文本' });
@@ -225,6 +247,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         text: privacy?.requestText || inputText,
         style: selectedStyle,
         ...(selectedPersonalStyleId ? { personal_style_id: selectedPersonalStyleId } : {}),
+        ...(selectedCustomSceneId ? { custom_scene_id: selectedCustomSceneId } : {}),
         rewrite_strength: selectedRewriteStrength,
         ...(privacy ? { privacy_mode: true } : {}),
       });
@@ -246,6 +269,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           personalStyleVersion: selectedPersonalStyleVersion,
           comparisonGroupId: conversion.comparisonGroupId || '',
           rewriteStrength: selectedRewriteStrength,
+          customSceneId: selectedCustomSceneId,
         } : null,
       });
       await get().fetchQuota();
@@ -273,7 +297,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   convertDocument: async (file) => {
-    const { selectedStyle, selectedPersonalStyleId, selectedRewriteStrength } = get();
+    const {
+      selectedStyle,
+      selectedPersonalStyleId,
+      selectedRewriteStrength,
+      selectedCustomSceneId,
+    } = get();
     set({
       isDocumentLoading: true,
       documentTaskProgress: 0,
@@ -289,6 +318,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         selectedStyle,
         selectedPersonalStyleId,
         selectedRewriteStrength,
+        selectedCustomSceneId,
       );
       localStorage.setItem(ACTIVE_DOCUMENT_TASK_KEY, created.task_id);
       const result = await waitForDocumentTask(created.task_id, (progress, taskMessage) => {
@@ -378,6 +408,9 @@ export const useAppStore = create<AppState>((set, get) => ({
           selectedPersonalStyleId: null,
           selectedPersonalStyleName: '',
           selectedPersonalStyleVersion: null,
+          selectedCustomSceneId: null,
+          selectedCustomSceneName: '',
+          selectedCustomSceneVersion: null,
           lastPersonalConversion: null,
           lastConversionPrivacyCount: 0,
           lastConversionPrivacyMode: false,

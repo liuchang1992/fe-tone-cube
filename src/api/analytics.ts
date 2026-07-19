@@ -1,4 +1,5 @@
 import apiClient from './client';
+import { getAnalyticsSessionId } from '@/utils/visitorId';
 
 
 export type AnalyticsFeature =
@@ -32,6 +33,8 @@ const analyticsEnabled = import.meta.env.VITE_ANALYTICS_ENABLED !== 'false';
 const sendEvent = (eventType: 'page_view' | 'feature', eventName: string, pagePath: string) => {
   if (!analyticsEnabled) return;
   void apiClient.post('/api/analytics/events', {
+    event_id: crypto.randomUUID(),
+    session_id: getAnalyticsSessionId(),
     event_type: eventType,
     event_name: eventName,
     page_path: pagePath,

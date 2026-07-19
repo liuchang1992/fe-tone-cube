@@ -33,12 +33,14 @@ export const createDocumentConvertTask = async (
   style: string,
   personalStyleId?: number | null,
   rewriteStrength: RewriteStrength = 'standard',
+  customSceneId?: number | null,
 ): Promise<DocumentTaskCreateResponse> => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('style', style);
   formData.append('rewrite_strength', rewriteStrength);
   if (personalStyleId) formData.append('personal_style_id', String(personalStyleId));
+  if (customSceneId) formData.append('custom_scene_id', String(customSceneId));
 
   const { data } = await apiClient.post<DocumentTaskCreateResponse>('/api/document-convert', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },

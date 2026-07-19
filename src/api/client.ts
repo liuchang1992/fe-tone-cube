@@ -16,12 +16,9 @@ const apiClient = axios.create({
 // 请求拦截器：自动携带 token 和 visitorId
 apiClient.interceptors.request.use((config) => {
   const token = getStoredToken();
+  config.headers['X-Visitor-Id'] = getVisitorId();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-  } else {
-    // 未登录时，携带访客ID
-    const visitorId = getVisitorId();
-    config.headers['X-Visitor-Id'] = visitorId;
   }
   return config;
 });

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   BankOutlined,
+  CodeOutlined,
   CustomerServiceOutlined,
   DownOutlined,
   EditOutlined,
@@ -20,13 +21,15 @@ import {
   TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { Modal } from 'antd';
+import { Modal, message } from 'antd';
 import { FiHeart } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 
 import type { RewriteStrength } from '@/api/convert';
+import { listCustomScenes, type CustomScene } from '@/api/customScenes';
 import { listPersonalStyles, type PersonalStyle } from '@/api/personalStyles';
 import { useAppStore } from '@/store/appStore';
+import { CustomSceneEditor } from './CustomSceneEditor';
 import './index.less';
 
 const STYLE_OPTIONS = [
@@ -69,9 +72,11 @@ export const StyleSelector: React.FC = () => {
     isLoading,
     isDocumentLoading,
     selectedStyle,
+    selectedCustomSceneId,
     selectedPersonalStyleId,
     selectedRewriteStrength,
     setStyle,
+    setCustomScene,
     setPersonalStyle,
     setRewriteStrength,
     user,
@@ -79,6 +84,10 @@ export const StyleSelector: React.FC = () => {
   const [sceneOpen, setSceneOpen] = useState(false);
   const [expandedSceneGroup, setExpandedSceneGroup] = useState('work');
   const [personalStyles, setPersonalStyles] = useState<PersonalStyle[]>([]);
+  const [customScenes, setCustomScenes] = useState<CustomScene[]>([]);
+  const [customScenesOwner, setCustomScenesOwner] = useState('');
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingScene, setEditingScene] = useState<CustomScene | null>(null);
   const [stylesOwner, setStylesOwner] = useState('');
   const selectionDisabled = isLoading || isDocumentLoading;
   const availablePersonalStyles = useMemo(
@@ -108,6 +117,18 @@ export const StyleSelector: React.FC = () => {
           setStylesOwner(user.username);
         }
       });
+    listCustomScenes()
+      .then((items) => {
+        if (!active) return;
+        setCustomScenes(items);
+        setCustomScenesOwner(user.username);
+      })
+      .catch(() => {
+        if (active) {
+          setCustomScenes([]);
+          setCustomScenesOwner(user.username);
+        }
+      });
     return () => { active = false; };
   }, [setPersonalStyle, user.isLoggedIn, user.username]);
 
@@ -118,12 +139,20 @@ export const StyleSelector: React.FC = () => {
   const selectedStrength = STRENGTH_OPTIONS.find(
     (item) => item.value === selectedRewriteStrength,
   ) || STRENGTH_OPTIONS[1];
-  const selectedScene = STYLE_OPTIONS.find((item) => item.style === selectedStyle) || STYLE_OPTIONS[0];
+  const availableCustomScenes = customScenesOwner === user.username ? customScenes : [];
+  const selectedCustomScene = availableCustomScenes.find((item) => item.id === selectedCustomSceneId);
+  const selectedScene = selectedCustomScene ? {
+    style: selectedStyle,
+    label: selectedCustomScene.name,
+    description: selectedCustomScene.description,
+    icon: CodeOutlined,
+    color: '#7c3aed',
+  } : (STYLE_OPTIONS.find((item) => item.style === selectedStyle) || STYLE_OPTIONS[0]);
   const SelectedSceneIcon = selectedScene.icon;
   const selectedSceneGroup = STYLE_GROUPS.find((group) => group.styles.includes(selectedScene.style));
 
   const openScenePicker = () => {
-    setExpandedSceneGroup(selectedSceneGroup?.key || STYLE_GROUPS[0].key);
+    setExpandedSceneGroup(selectedCustomScene ? 'custom' : (selectedSceneGroup?.key || STYLE_GROUPS[0].key));
     setSceneOpen(true);
   };
 
@@ -137,6 +166,30 @@ export const StyleSelector: React.FC = () => {
       );
     }
   }, [availablePersonalStyles, selectedPersonalStyle, selectedPersonalStyleId, setPersonalStyle, stylesOwner, user.username]);
+
+  useEffect(() => {
+    if (selectedCustomSceneId && customScenesOwner === user.username && !selectedCustomScene) {
+      setCustomScene(null);
+    }
+  }, [customScenesOwner, selectedCustomScene, selectedCustomSceneId, setCustomScene, user.username]);
+
+  const openCustomSceneEditor = (scene: CustomScene | null) => {
+    if (!user.isLoggedIn) {
+      message.info('请先登录后创建自定义场景');
+      useAppStore.getState().setShowLoginModal(true);
+      return;
+    }
+    setEditingScene(scene);
+    setEditorOpen(true);
+  };
+
+  const handleCustomSceneSaved = (scene: CustomScene) => {
+    setCustomScenes((items) => [scene, ...items.filter((item) => item.id !== scene.id)]);
+    setCustomScenesOwner(user.username);
+    setCustomScene(scene.id, scene.name, scene.current_version);
+    setEditorOpen(false);
+    setSceneOpen(false);
+  };
 
   return (
     <>
@@ -170,7 +223,13 @@ export const StyleSelector: React.FC = () => {
             </button>
           ))}
         </div>
-        <p><span>决定允许怎样改</span>{selectedStrength.description}；个人风格仍决定表达习惯</p>
+        <p>
+          <span>决定允许怎样改</span>
+          {selectedStrength.description}
+          {user.isLoggedIn && (
+            <small className="rewrite-strength__personal-note">个人风格仍决定表达习惯</small>
+          )}
+        </p>
       </div>
 
       {user.isLoggedIn && (
@@ -226,6 +285,46 @@ export const StyleSelector: React.FC = () => {
       >
         <p className="scene-picker-modal__intro">场景决定文案用途和常规表达方式，个人风格仍会优先控制你的用词与习惯。</p>
         <div className="scene-picker-groups">
+          {user.isLoggedIn && (
+            <section className={`scene-picker-group scene-picker-group--custom ${expandedSceneGroup === 'custom' ? 'is-expanded' : ''}`}>
+              <button
+                type="button"
+                className="scene-picker-group__heading"
+                aria-expanded={expandedSceneGroup === 'custom'}
+                onClick={() => setExpandedSceneGroup('custom')}
+              >
+                <span className="scene-picker-group__copy"><strong>我的场景</strong><small>仅你可见的专属转换类型</small></span>
+                <DownOutlined />
+              </button>
+              {expandedSceneGroup === 'custom' && (
+                <div className="scene-picker-group__options custom-scene-options">
+                  {availableCustomScenes.map((scene) => (
+                    <div
+                      key={scene.id}
+                      className={`custom-scene-option ${selectedCustomSceneId === scene.id ? 'is-active' : ''}`}
+                    >
+                      <button
+                        type="button"
+                        className="custom-scene-option__select"
+                        onClick={() => {
+                          setCustomScene(scene.id, scene.name, scene.current_version);
+                          setSceneOpen(false);
+                        }}
+                      >
+                        <span><CodeOutlined style={{ color: '#7c3aed' }} /></span>
+                        <span><strong>{scene.name}</strong><small>{scene.description}</small></span>
+                      </button>
+                      <button type="button" className="custom-scene-option__edit" onClick={() => openCustomSceneEditor(scene)}>编辑</button>
+                    </div>
+                  ))}
+                  <button type="button" className="custom-scene-create" onClick={() => openCustomSceneEditor(null)}>
+                    <span><PlusOutlined /></span>
+                    <div><strong>创建自定义场景</strong><small>描述需求，由系统生成可编辑配置</small></div>
+                  </button>
+                </div>
+              )}
+            </section>
+          )}
           {STYLE_GROUPS.map((group) => {
             const expanded = expandedSceneGroup === group.key;
             return (
@@ -270,6 +369,22 @@ export const StyleSelector: React.FC = () => {
           })}
         </div>
       </Modal>
+      {editorOpen && (
+        <CustomSceneEditor
+          key={editingScene?.id || 'new'}
+          open
+          scene={editingScene}
+          rewriteStrength={selectedRewriteStrength}
+          personalStyleId={selectedPersonalStyleId}
+          onClose={() => setEditorOpen(false)}
+          onSaved={handleCustomSceneSaved}
+          onDeleted={(sceneId) => {
+            setCustomScenes((items) => items.filter((item) => item.id !== sceneId));
+            if (selectedCustomSceneId === sceneId) setCustomScene(null);
+            setEditorOpen(false);
+          }}
+        />
+      )}
     </>
   );
 };

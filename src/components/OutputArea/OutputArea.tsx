@@ -100,6 +100,9 @@ export const OutputArea: React.FC = () => {
         use_personal_style: false,
         comparison_group_id: lastPersonalConversion.comparisonGroupId,
         rewrite_strength: lastPersonalConversion.rewriteStrength,
+        ...(lastPersonalConversion.customSceneId
+          ? { custom_scene_id: lastPersonalConversion.customSceneId }
+          : {}),
       });
       setBaselineResult(result);
     } catch (error) {
@@ -150,7 +153,7 @@ export const OutputArea: React.FC = () => {
             )}
           </span>
           <div className="output-info__actions">
-            {isComplete && lastPersonalConversion && (
+            {lastPersonalConversion && (
               <button type="button" className="compare-btn" onClick={openComparison}>
                 <SwapOutlined /> 对比默认效果
               </button>

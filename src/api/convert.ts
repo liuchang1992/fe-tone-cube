@@ -6,6 +6,7 @@ export interface ConvertRequest {
   text: string;
   style: string;
   personal_style_id?: number;
+  custom_scene_id?: number;
   use_personal_style?: boolean;
   comparison_group_id?: string;
   rewrite_strength?: RewriteStrength;
